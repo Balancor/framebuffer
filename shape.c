@@ -80,22 +80,22 @@ void getColorFields(int color, int* red, int* green, int* blue, int* alpha, int 
     }
     switch(colorFormat){
         case COLOR_FORMAT_RGB565:
-            printf("Color Format RGB565\n");
+//            printf("Color Format RGB565\n");
             *red   = (color >> 11) & RGB565_RED_MASK;
             *green = (color >>  5) & RGB565_GREEN_MASK;
             *blue  = color & RGB565_BLUE_MASK;
             alpha  = 0xFF;
             break;
         case COLOR_FORMAT_RGB888:
-            printf("color: 0x%6x, Color Format RGB888\n",color);
+//            printf("color: 0x%6x, Color Format RGB888\n",color);
             *red   = (color >> 16) & RGB888_COLOR_MASK;
             *green = (color >> 8) & RGB888_COLOR_MASK;
             *blue  = color & RGB888_COLOR_MASK;
             alpha  = 0xFF;
-            printf("red: 0x%2x, green: 0x%2x, blue: 0x%2x\n", *red, *green, *blue);
+//            printf("red: 0x%2x, green: 0x%2x, blue: 0x%2x\n", *red, *green, *blue);
             break;
         case COLOR_FORMAT_RGBA:
-            printf("Color Format RGBA\n");
+//            printf("Color Format RGBA\n");
             *red   = (color >> 24) & RGBA_COLOR_MASK;
             *green = (color >> 16) & RGBA_COLOR_MASK;
             *blue  = (color >> 8 ) & RGBA_COLOR_MASK;
@@ -149,21 +149,21 @@ void setPixel(int x, int y, int color, int colorFormat){
     int alpha = 0xff;
     getColorFields(color, &r, &g, &b, &alpha, colorFormat);
 
-    printf("red: %d, green: %d, blue: %d\n", r, g, b);
+//    printf("red: %d, green: %d, blue: %d\n", r, g, b);
     int bpp = shape_fb_info.vinfo->bits_per_pixel;
     if(bpp == 16){
-       printf("Screen Color Format RGB565\n");
+//       printf("Screen Color Format RGB565\n");
        unsigned short int t = r << 16 |
                               g << 5  |
                               b;
      *((unsigned short int*)(fbp + location)) = t;
     } else if(bpp == 24) {
-        printf("Screen Color Format RGB888\n");
+//        printf("Screen Color Format RGB888\n");
         *(fbp + location)     = 0xFF & b;
         *(fbp + location + 1) = 0xFF & g;
         *(fbp + location + 2) = 0xFF & r;
     } else if(bpp == 32){
-        printf("Screen Color Format RGBA\n");
+//        printf("Screen Color Format RGBA\n");
         *(fbp + location)     = 0xFF & b;
         *(fbp + location + 1) = 0xFF & g;
         *(fbp + location + 2) = 0xFF & r;
@@ -241,7 +241,7 @@ int main()
 //    setPixel(600, 200, 0x00FF00, COLOR_FORMAT_RGB888);
 //      dump_var_screeninfo(shape_fb_info.vinfo);
 //      dump_fix_screeninfo(shape_fb_info.finfo);
-    drawLine(400,200, 200, 200, 0x00FF00);
+    drawLine(400,200, 20, 20, 0x00FF00);
     if(shape_fb_info.initialized){
         free_framebuffer_info(&shape_fb_info);
     }
