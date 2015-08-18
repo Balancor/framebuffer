@@ -39,14 +39,8 @@ struct shape_framebuffer_info {
     struct fb_var_screeninfo *vinfo ;
     struct fb_fix_screeninfo *finfo ;
 
-} shape_fb_info = {
-    .framebuffer_fd = -1,
-    .fbp = 0,
-    .initialized = 0,
-    .screensize = 0,
-    .vinfo = 0,
-    .finfo = 0
 };
+struct shape_framebuffer_info *shape_fb_info = 0;
 
 int getColorFormat(int color) {
     if(color <= MAX_COLOR_RGB565) {
@@ -114,16 +108,16 @@ int RGB888ToRGB565(int rgb888_color){
 
 int getLocation(int x, int y){
     int location = -1;
-    if(shape_fb_info.initialized){
-        location = (y + shape_fb_info.vinfo->yoffset) * (shape_fb_info.finfo->line_length) +
-                   (x + shape_fb_info.vinfo->xoffset) * (shape_fb_info.vinfo->bits_per_pixel / 8);
+    if(shape_fb_info->initialized){
+        location = (y + shape_fb_info->vinfo->yoffset) * (shape_fb_info->finfo->line_length) +
+                   (x + shape_fb_info->vinfo->xoffset) * (shape_fb_info->vinfo->bits_per_pixel / 8);
     } else {
         printf("Error:Framebuffer has not been initialized\n");
     }
     return location;
 }
 void setPixel(int x, int y, int color, int colorFormat){
-    if(!shape_fb_info.initialized){
+    if(!shape_fb_info->initialized){
         printf("Error:Framebuffer has not been initialized\n");
         return;
     }
@@ -132,25 +126,25 @@ void setPixel(int x, int y, int color, int colorFormat){
         printf("Error: Cannot get the location\n");
         return;
     }
-    char* fbp = shape_fb_info.fbp;
+
     int r  = 0, g = 0, b = 0;
     int alpha = 0xff;
     getColorFields(color, &r, &g, &b, &alpha, colorFormat);
 
     printf("red: %d, green: %d, blue: %d\n", r, g, b);
-    int bpp = shape_fb_info.vinfo->bits_per_pixel;
-    if(bpp == 16){
+
+    if(vinfo.bits_per_pixel == 16){
        printf("Screen Color Format RGB565\n");
        unsigned short int t = r << 16 |
                               g << 5  |
                               b;
      *((unsigned short int*)(fbp + location)) = t;
-    } else if(bpp == 24) {
+    } else if(vinfo.bits_per_pixel == 24) {
         printf("Screen Color Format RGB888\n");
         *(fbp + location)     = 0xFF & b;
         *(fbp + location + 1) = 0xFF & g;
         *(fbp + location + 2) = 0xFF & r;
-    } else if(bpp == 32){
+    } else if(vinfo.bits_per_pixel == 32){
         printf("Screen Color Format RGBA\n");
         *(fbp + location)     = 0xFF & b;
         *(fbp + location + 1) = 0xFF & g;
@@ -160,16 +154,14 @@ void setPixel(int x, int y, int color, int colorFormat){
 
 };
 void dump_var_screeninfo(struct fb_var_screeninfo *vinfo){
-    printf("resolution: %u x %u\n", vinfo->xres, vinfo->yres);
-    printf("virtual-resolution: %u x %u\n", vinfo->xres_virtual, vinfo->yres_virtual);
-    printf("xoffset: %u, xoffset: %u\n", vinfo->xoffset, vinfo->yoffset);
-    printf("bits_per_pixel: %u\n", vinfo->bits_per_pixel);
+    printf("resolution: %d x %d\n", vinfo->xres, vinfo->yres);
+    printf("virtual-resolution: %d x %d\n", vinfo->xres_virtual, vinfo->yres_virtual);
+    printf("xoffset: %d, xoffset: %d\n", vinfo->xoffset, vinfo->yoffset);
+    printf("bits_per_pixel: %d\n", vinfo->bits_per_pixel);
 
 }
 
 void dump_fix_screeninfo(struct fb_fix_screeninfo *finfo){
-    printf("smem_len: %lu\n", finfo->smem_len);
-    printf("line_length: %u\n", finfo->line_length);
 }
 
 void init_framebuffer_info(struct shape_framebuffer_info *shape_fb_info){
@@ -214,11 +206,39 @@ void init_framebuffer_info(struct shape_framebuffer_info *shape_fb_info){
 }
 void free_framebuffer_info(struct shape_framebuffer_info *shape_fb_info){
     if(shape_fb_info->initialized){
+        int framebuffer_fd = -1;
+
+        struct fb_var_screeninfo vinfo;
+        struct fb_fix_screeninfo finfo;
+
+        char* fbp = 0;
+        long int screensize = 0;
+        framebuffer_fd = open(FRAMEBUFFER_DEVICE, O_RDWR);
+        if(framebuffer_fd < 0){
+            perror("Error: Canot open the framebuffer device : " FRAMEBUFFER_DEVICE );
+            exit(-1);
+        }
+
+        if(ioctl(framebuffer_fd, FBIOGET_VSCREENINFO, &vinfo) == -1 ){
+            perror("Error: Canot get variable screen infomation");
+            exit(-2);
+        }
+        if(ioctl(framebuffer_fd, FBIOGET_FSCREENINFO, &finfo) == -1 ){
+            perror("Error: Canot get fix screen infomation");
+            exit(-3);
+        }
+        screensize = vinfo.yres * finfo.line_length;
+        fbp = (char*)mmap(NULL, screensize,PROT_READ | PROT_WRITE,  MAP_SHARED, framebuffer_fd, 0);
+        if(fbp == -1){
+            perror("Error: Canot mmap");
+            exit(-4);
+        }
         shape_fb_info->initialized = 0;
+        free(shape_fb_info->vinfo);
+        free(shape_fb_info->finfo);
         shape_fb_info->screensize = 0;
         munmap(shape_fb_info->fbp, shape_fb_info->screensize);
-        if(shape_fb_info->framebuffer_fd)
-            close(shape_fb_info->framebuffer_fd);
+        close(shape_fb_info->framebuffer_fd);
     } else {
         printf("Had not initialized the framebuffer info\n");
         return;
@@ -227,16 +247,14 @@ void free_framebuffer_info(struct shape_framebuffer_info *shape_fb_info){
 }
 int main()
 {
-    if(!shape_fb_info.initialized){
-        init_framebuffer_info(&shape_fb_info);
+    if(!shape_fb_info->initialized){
+        init_framebuffer_info(shape_fb_info);
     }
 
     setPixel(600, 200, 0x00FF00, COLOR_FORMAT_RGB888);
-//      dump_var_screeninfo(shape_fb_info.vinfo);
-//      dump_fix_screeninfo(shape_fb_info.finfo);
 
-    if(shape_fb_info.initialized){
-        free_framebuffer_info(&shape_fb_info);
+    if(shape_fb_info->initialized){
+        free_framebuffer_info(shape_fb_info);
     }
 
     return -1;
