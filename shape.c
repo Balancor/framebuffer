@@ -225,16 +225,23 @@ void free_framebuffer_info(struct shape_framebuffer_info *shape_fb_info){
     }
 
 }
+void drawLine(int startx, int starty, int xoffset, int yoffset, int color){
+    int x = 0, y = 0;
+    for(x = startx; x <= startx + xoffset; x++)
+        for(y = starty; y <=starty + yoffset; y++){
+            setPixel(x, y, color, COLOR_FORMAT_RGB888);
+        }
+}
 int main()
 {
     if(!shape_fb_info.initialized){
         init_framebuffer_info(&shape_fb_info);
     }
 
-    setPixel(600, 200, 0x00FF00, COLOR_FORMAT_RGB888);
+//    setPixel(600, 200, 0x00FF00, COLOR_FORMAT_RGB888);
 //      dump_var_screeninfo(shape_fb_info.vinfo);
 //      dump_fix_screeninfo(shape_fb_info.finfo);
-
+    drawLine(400,200, 200, 200, 0x00FF00);
     if(shape_fb_info.initialized){
         free_framebuffer_info(&shape_fb_info);
     }
