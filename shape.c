@@ -239,9 +239,9 @@ int main()
     }
 
 //    setPixel(600, 200, 0x00FF00, COLOR_FORMAT_RGB888);
-//      dump_var_screeninfo(shape_fb_info.vinfo);
-//      dump_fix_screeninfo(shape_fb_info.finfo);
-    drawLine(400,200, 20, 20, 0x00FF00);
+      dump_var_screeninfo(shape_fb_info.vinfo);
+      dump_fix_screeninfo(shape_fb_info.finfo);
+//    drawLine(400,200, 20, 20, 0x00FF00);
     if(shape_fb_info.initialized){
         free_framebuffer_info(&shape_fb_info);
     }
