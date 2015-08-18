@@ -48,6 +48,18 @@ struct shape_framebuffer_info {
     .finfo = 0
 };
 
+void dump_var_screeninfo(struct fb_var_screeninfo *vinfo){
+    printf("resolution: %u x %u\n", vinfo->xres, vinfo->yres);
+    printf("virtual-resolution: %u x %u\n", vinfo->xres_virtual, vinfo->yres_virtual);
+    printf("xoffset: %u, xoffset: %u\n", vinfo->xoffset, vinfo->yoffset);
+    printf("bits_per_pixel: %u\n", vinfo->bits_per_pixel);
+
+}
+
+void dump_fix_screeninfo(struct fb_fix_screeninfo *finfo){
+    printf("smem_len: %lu\n", finfo->smem_len);
+    printf("line_length: %u\n", finfo->line_length);
+}
 int getColorFormat(int color) {
     if(color <= MAX_COLOR_RGB565) {
         return COLOR_FORMAT_RGB565;
@@ -112,8 +124,8 @@ int RGB888ToRGB565(int rgb888_color){
 }
 */
 
-int getLocation(int x, int y){
-    int location = -1;
+unsigned int getLocation(int x, int y){
+    unsigned int location = -1;
     if(shape_fb_info.initialized){
         location = (y + shape_fb_info.vinfo->yoffset) * (shape_fb_info.finfo->line_length) +
                    (x + shape_fb_info.vinfo->xoffset) * (shape_fb_info.vinfo->bits_per_pixel / 8);
@@ -127,7 +139,7 @@ void setPixel(int x, int y, int color, int colorFormat){
         printf("Error:Framebuffer has not been initialized\n");
         return;
     }
-    int location = getLocation(x, y);
+    unsigned int location = getLocation(x, y);
     if(location < 0) {
         printf("Error: Cannot get the location\n");
         return;
@@ -159,18 +171,6 @@ void setPixel(int x, int y, int color, int colorFormat){
     }
 
 };
-void dump_var_screeninfo(struct fb_var_screeninfo *vinfo){
-    printf("resolution: %u x %u\n", vinfo->xres, vinfo->yres);
-    printf("virtual-resolution: %u x %u\n", vinfo->xres_virtual, vinfo->yres_virtual);
-    printf("xoffset: %u, xoffset: %u\n", vinfo->xoffset, vinfo->yoffset);
-    printf("bits_per_pixel: %u\n", vinfo->bits_per_pixel);
-
-}
-
-void dump_fix_screeninfo(struct fb_fix_screeninfo *finfo){
-    printf("smem_len: %lu\n", finfo->smem_len);
-    printf("line_length: %u\n", finfo->line_length);
-}
 
 void init_framebuffer_info(struct shape_framebuffer_info *shape_fb_info){
     if(!shape_fb_info->initialized){
