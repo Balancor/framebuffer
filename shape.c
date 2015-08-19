@@ -153,10 +153,10 @@ void setPixel(int x, int y, int color, int colorFormat){
     int alpha = 0xff;
     getColorFields(color, &r, &g, &b, &alpha, colorFormat);
 
-//    printf("red: %d, green: %d, blue: %d\n", r, g, b);
     int bpp = shape_fb_info.vinfo->bits_per_pixel;
+    INFO("red: %d, green: %d, blue: %d, bpp: %d\n", r, g, b, bpp);
     if(bpp == 16){
-//       printf("Screen Color Format RGB565\n");
+       INFO("Screen Color Format RGB565\n");
        unsigned short int t = r << 16 |
                               g << 5  |
                               b;
@@ -167,7 +167,7 @@ void setPixel(int x, int y, int color, int colorFormat){
         *(fbp + location + 1) = 0xFF & g;
         *(fbp + location + 2) = 0xFF & r;
     } else if(bpp == 32){
-//        printf("Screen Color Format RGBA\n");
+        INFO("Screen Color Format RGBA\n");
         *(fbp + location)     = 0xFF & b;
         *(fbp + location + 1) = 0xFF & g;
         *(fbp + location + 2) = 0xFF & r;
@@ -231,10 +231,29 @@ void free_framebuffer_info(struct shape_framebuffer_info *shape_fb_info){
     }
 
 }
-void drawLine(int startx, int starty, int xoffset, int yoffset, int color){
-    int x = startx, y = 0;
-    for(y = starty; y <=starty + yoffset; y++){
-        setPixel(x, y, color, COLOR_FORMAT_RGB888);
+void drawLine(int startx, int starty, int endx, int endy, int color){
+    int dx = endx - startx;
+    int dy = endy - starty;
+    float k = 0.0, c = 0.0;
+    k = dx / dy;
+    c = (starty * dy - startx * dx) / dy;
+    INFO("dx: %d, dy: %d, k: %.2f, c: %.2f\n", dx, dy, k, c);
+    if(abs(k) < 1){
+        int x = 0;
+        float y = 0.0;
+        for(x = startx; x < startx + dx; x++){
+            y = k * x + c;
+            if( (y - (int)y) >= 0.5) setPixel(x, (int)(y+1), color, COLOR_FORMAT_RGB888);
+            else setPixel(x, (int)y, color, COLOR_FORMAT_RGB888);
+        }
+    } else {
+        int y = 0;
+        float x = 0.0;
+        for(y = starty; y < starty + dy; y++){
+            x = (y - c) / k;
+            if(x - (int)x >= 0.5) setPixel((int)(x+1), y, color, COLOR_FORMAT_RGB888);
+            else setPixel((int)x, y, color, COLOR_FORMAT_RGB888);
+        }
     }
 }
 int main()
@@ -245,9 +264,9 @@ int main()
     log_init();
 
 //    setPixel(600, 200, 0x00FF00, COLOR_FORMAT_RGB888);
-      dump_var_screeninfo(shape_fb_info.vinfo);
-      dump_fix_screeninfo(shape_fb_info.finfo);
-    drawLine(600,200, 20, 20, 0x00FF00);
+//      dump_var_screeninfo(shape_fb_info.vinfo);
+//      dump_fix_screeninfo(shape_fb_info.finfo);
+    drawLine(400,400, 600, 600, 0x00FF00);
     log_close();
     if(shape_fb_info.initialized){
         free_framebuffer_info(&shape_fb_info);
