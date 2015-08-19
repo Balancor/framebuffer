@@ -33,17 +33,19 @@ enum colorFormat {
 };
 
 struct shape_framebuffer_info {
-    int framebuffer_fd;
     char* fbp;
+    int framebuffer_fd;
     int initialized;
+    int line_size;
     long int screensize;
     struct fb_var_screeninfo *vinfo ;
     struct fb_fix_screeninfo *finfo ;
 
 } shape_fb_info = {
-    .framebuffer_fd = -1,
     .fbp = 0,
+    .framebuffer_fd = -1,
     .initialized = 0,
+    .line_size = 0,
     .screensize = 0,
     .vinfo = 0,
     .finfo = 0
@@ -127,9 +129,8 @@ int RGB888ToRGB565(int rgb888_color){
 
 unsigned int getLocation(int x, int y){
     unsigned int location = -1;
-    int line_size = shape_fb_info.vinfo->xres * shape_fb_info.vinfo->bits_per_pixel / 8;
     if(shape_fb_info.initialized){
-        location = (y + shape_fb_info.vinfo->yoffset) * (line_size) +
+        location = (y + shape_fb_info.vinfo->yoffset) * (shape_fb_info.line_size) +
                    (x + shape_fb_info.vinfo->xoffset) * (shape_fb_info.vinfo->bits_per_pixel / 8);
     } else {
         printf("Error:Framebuffer has not been initialized\n");
@@ -204,12 +205,14 @@ void init_framebuffer_info(struct shape_framebuffer_info *shape_fb_info){
             perror("Error: Canot mmap");
             exit(-4);
         }
+        int line_size = vinfo.xres * vinfo.bits_per_pixel / 8;;
         shape_fb_info->framebuffer_fd = framebuffer_fd;
         shape_fb_info->fbp = fbp;
         shape_fb_info->vinfo = &vinfo;
         shape_fb_info->finfo = &finfo;
         shape_fb_info->screensize = screensize;
         shape_fb_info->initialized = 1;
+        shape_fb_info->line_size = line_size;
     } else {
         printf("Havd initialized the framebuffer info\n");
         return;
