@@ -9,7 +9,7 @@
 
 #include "logs.h"
 static int log_fd = -1;
-static int log_level = LOG_DEFAULT_LEVEL
+static int log_level = LOG_DEFAULT_LEVEL;
 
 int log_get_level(void){
     return log_level;
@@ -44,7 +44,7 @@ void log_vwrite(int level, const char* fmt, va_list ap){
     }
     write(log_fd, buf, strlen(buf));
 }
-void log_write(int level, const char* fmt, ...) __attribute__((format(printf, 2, 3)));
+void log_write(int level, const char* fmt, ...){
     va_list ap;
     va_start(ap, fmt);
     log_vwrite(level, fmt, ap);
@@ -54,3 +54,12 @@ void log_write(int level, const char* fmt, ...) __attribute__((format(printf, 2,
 void log_close(){
     if(log_fd) close(log_fd);
 };
+/*
+int main(){
+    log_init();
+    int integer = 10;
+    log_write(3, "Hello, world, int: %d\n", integer);
+    log_close();
+    return 0;
+}
+*/

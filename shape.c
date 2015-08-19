@@ -159,7 +159,7 @@ void setPixel(int x, int y, int color, int colorFormat){
                               b;
      *((unsigned short int*)(fbp + location)) = t;
     } else if(bpp == 24) {
-        log_v("Screen Color Format RGB888\n");
+        INFO("Screen Color Format RGB888\n");
         *(fbp + location)     = 0xFF & b;
         *(fbp + location + 1) = 0xFF & g;
         *(fbp + location + 2) = 0xFF & r;
@@ -237,17 +237,13 @@ int main()
     if(!shape_fb_info.initialized){
         init_framebuffer_info(&shape_fb_info);
     }
-    if(!logInfo.logOpened){
-        log_init();
-    }
+    log_init();
 
 //    setPixel(600, 200, 0x00FF00, COLOR_FORMAT_RGB888);
 //      dump_var_screeninfo(shape_fb_info.vinfo);
 //      dump_fix_screeninfo(shape_fb_info.finfo);
     drawLine(600,200, 20, 20, 0x00FF00);
-    if(logInfo.logOpened){
-        log_close();
-    }
+    log_close();
     if(shape_fb_info.initialized){
         free_framebuffer_info(&shape_fb_info);
     }
