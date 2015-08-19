@@ -50,16 +50,16 @@ struct shape_framebuffer_info {
 };
 
 void dump_var_screeninfo(struct fb_var_screeninfo *vinfo){
-    printf("resolution: %u x %u\n", vinfo->xres, vinfo->yres);
-    printf("virtual-resolution: %u x %u\n", vinfo->xres_virtual, vinfo->yres_virtual);
-    printf("xoffset: %u, xoffset: %u\n", vinfo->xoffset, vinfo->yoffset);
-    printf("bits_per_pixel: %u\n", vinfo->bits_per_pixel);
+    INFO("resolution: %u x %u\n", vinfo->xres, vinfo->yres);
+    INFO("virtual-resolution: %u x %u\n", vinfo->xres_virtual, vinfo->yres_virtual);
+    INFO("xoffset: %u, xoffset: %u\n", vinfo->xoffset, vinfo->yoffset);
+    INFO("bits_per_pixel: %u\n", vinfo->bits_per_pixel);
 
 }
 
 void dump_fix_screeninfo(struct fb_fix_screeninfo *finfo){
-    printf("smem_len: %lu\n", finfo->smem_len);
-    printf("line_length: %u\n", finfo->line_length);
+    INFO("smem_len: %lu\n", finfo->smem_len);
+    INFO("line_length: %u\n", finfo->line_length);
 }
 int getColorFormat(int color) {
     if(color <= MAX_COLOR_RGB565) {
@@ -127,8 +127,9 @@ int RGB888ToRGB565(int rgb888_color){
 
 unsigned int getLocation(int x, int y){
     unsigned int location = -1;
+    int line_size = shape_fb_info.vinfo->xres * shape_fb_info.vinfo->bits_per_pixel / 8;
     if(shape_fb_info.initialized){
-        location = (y + shape_fb_info.vinfo->yoffset) * (shape_fb_info.finfo->line_length) +
+        location = (y + shape_fb_info.vinfo->yoffset) * (line_size) +
                    (x + shape_fb_info.vinfo->xoffset) * (shape_fb_info.vinfo->bits_per_pixel / 8);
     } else {
         printf("Error:Framebuffer has not been initialized\n");
@@ -141,6 +142,7 @@ void setPixel(int x, int y, int color, int colorFormat){
         return;
     }
     unsigned int location = getLocation(x, y);
+    INFO("x: %d, y: %d, location: %lu\n", x, y, location);
     if(location < 0) {
         printf("Error: Cannot get the location\n");
         return;
@@ -240,8 +242,8 @@ int main()
     log_init();
 
 //    setPixel(600, 200, 0x00FF00, COLOR_FORMAT_RGB888);
-//      dump_var_screeninfo(shape_fb_info.vinfo);
-//      dump_fix_screeninfo(shape_fb_info.finfo);
+      dump_var_screeninfo(shape_fb_info.vinfo);
+      dump_fix_screeninfo(shape_fb_info.finfo);
     drawLine(600,200, 20, 20, 0x00FF00);
     log_close();
     if(shape_fb_info.initialized){
