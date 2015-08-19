@@ -252,7 +252,7 @@ void drawLine(int startx, int starty, int endx, int endy, int color){
     int dx = endx - startx;
     int dy = endy - starty;
     float k = 0.0, c = 0.0;
-    k = dx / dy;
+    k = (float)dx / (float)dy;
     c = (starty * dy - startx * dx) / dy;
     INFO("dx: %d, dy: %d, k: %.2f, c: %.2f\n", dx, dy, k, c);
     if(abs(k) < 1){
@@ -283,7 +283,7 @@ int main()
 //    setPixel(600, 200, 0x00FF00, COLOR_FORMAT_RGB888);
 //      dump_var_screeninfo(shape_fb_info.vinfo);
 //      dump_fix_screeninfo(shape_fb_info.finfo);
-    drawLine(400,400, 600, 600, 0x00FF00);
+    drawLine(200,100, 600, 200, 0x00FF00);
     log_close();
     if(shape_fb_info.initialized){
         free_framebuffer_info(&shape_fb_info);
