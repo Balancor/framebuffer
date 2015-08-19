@@ -7,6 +7,7 @@
 #include <linux/fb.h>
 #include <sys/ioctl.h>
 
+#include "logs.h"
 #define FRAMEBUFFER_DEVICE "/dev/fb0"
 
 #define MAX_COLOR_RGB565  2<<15
@@ -226,22 +227,27 @@ void free_framebuffer_info(struct shape_framebuffer_info *shape_fb_info){
 
 }
 void drawLine(int startx, int starty, int xoffset, int yoffset, int color){
-    int x = 0, y = 0;
-    for(x = startx; x <= startx + xoffset; x++)
-        for(y = starty; y <=starty + yoffset; y++){
-            setPixel(x, y, color, COLOR_FORMAT_RGB888);
-        }
+    int x = startx, y = 0;
+    for(y = starty; y <=starty + yoffset; y++){
+        setPixel(x, y, color, COLOR_FORMAT_RGB888);
+    }
 }
 int main()
 {
     if(!shape_fb_info.initialized){
         init_framebuffer_info(&shape_fb_info);
     }
+    if(!logInfo.logOpened){
+        log_init();
+    }
 
 //    setPixel(600, 200, 0x00FF00, COLOR_FORMAT_RGB888);
-      dump_var_screeninfo(shape_fb_info.vinfo);
-      dump_fix_screeninfo(shape_fb_info.finfo);
-//    drawLine(400,200, 20, 20, 0x00FF00);
+//      dump_var_screeninfo(shape_fb_info.vinfo);
+//      dump_fix_screeninfo(shape_fb_info.finfo);
+    drawLine(600,200, 20, 20, 0x00FF00);
+    if(logInfo.logOpened){
+        log_close();
+    }
     if(shape_fb_info.initialized){
         free_framebuffer_info(&shape_fb_info);
     }
