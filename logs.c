@@ -1,10 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <fcntl.h>
-#include <sys/types.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/cdefs.h>
+#include <stdarg.h>
 
 #include "logs.h"
+static int log_fd = -1;
+static int log_level = LOG_DEFAULT_LEVEL
+
+int log_get_level(void){
+    return log_level;
+}
+
+void log_set_level(int level){
+    log_level = level;
+}
 
 void log_init(){
     int fd = -1;
@@ -12,41 +25,32 @@ void log_init(){
     if(fd <= 0){
         printf("Cannot open the log file\n ");
     }
-    logInfo.logFd = fd;
-    logInfo.logOpened = 1;
+    log_fd = fd;
 
 };
-void write_msg(const char* msg, int length){
-    if(lseek(logInfo.logFd, 0, SEEK_END) == -1){
+#define LOG_BUF_MAX 512
+void log_vwrite(int level, const char* fmt, va_list ap){
+    char buf[LOG_BUF_MAX];
+
+    if(level > log_level) return;
+    if(log_fd < 0) log_init();
+    if(log_fd < 0) return;
+
+    vsnprintf(buf, LOG_BUF_MAX, fmt, ap);
+    buf[LOG_BUF_MAX -1] = 0;
+
+    if(lseek(log_fd, 0, SEEK_END) == -1){
         return;
     }
-    if(write(logInfo.logFd, msg, length) != length){
-        return;
-    }
+    write(log_fd, buf, strlen(buf));
 }
-void log_v(const char* msg){
-    const char* LOG_TAG = 'V';
-    int msg_length = strlen(msg);
+void log_write(int level, const char* fmt, ...) __attribute__((format(printf, 2, 3)));
+    va_list ap;
+    va_start(ap, fmt);
+    log_vwrite(level, fmt, ap);
+    va_end(ap);
+}
 
-    char* tem = (char*)malloc(msg_length + 3);
-    tem[0] = 'V';
-    tem[1] = ':';
-    tem[2] = ' ';
-    memcpy(tem+3, msg, msg_length);
-    write_msg(tem, msg_length + 3);
-    free(tem);
-
-};
-void log_i(const char* msg);
-void log_d(const char* msg);
-void log_w(const char* msg);
-void log_e(const char* msg);
 void log_close(){
-    if(logInfo.logOpened){
-        logInfo.logOpened = 0;
-    }
-    if(logInfo.logFd){
-        logInfo.logFd = -1;
-        close(logInfo.logFd);
-    }
+    if(log_fd) close(log_fd);
 };

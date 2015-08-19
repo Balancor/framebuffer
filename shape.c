@@ -159,7 +159,7 @@ void setPixel(int x, int y, int color, int colorFormat){
                               b;
      *((unsigned short int*)(fbp + location)) = t;
     } else if(bpp == 24) {
-//        printf("Screen Color Format RGB888\n");
+        log_v("Screen Color Format RGB888\n");
         *(fbp + location)     = 0xFF & b;
         *(fbp + location + 1) = 0xFF & g;
         *(fbp + location + 2) = 0xFF & r;
