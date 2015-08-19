@@ -38,8 +38,13 @@ struct shape_framebuffer_info {
     int initialized;
     int line_size;
     long int screensize;
-    struct fb_var_screeninfo *vinfo ;
-    struct fb_fix_screeninfo *finfo ;
+    unsigned int bpp;
+    unsigned int xres;
+    unsigned int yres;
+    unsigned int xres_virtual;
+    unsigned int yres_virtual;
+    unsigned int xoffset;
+    unsigned int yoffset;
 
 } shape_fb_info = {
     .fbp = 0,
@@ -47,10 +52,15 @@ struct shape_framebuffer_info {
     .initialized = 0,
     .line_size = 0,
     .screensize = 0,
-    .vinfo = 0,
-    .finfo = 0
+    .bpp = -1,
+    .xres = 0,
+    .yres = 0,
+    .xres_virtual = 0,
+    .yres_virtual = 0,
+    .xoffset = 0,
+    .yoffset = 0
 };
-
+/*
 void dump_var_screeninfo(struct fb_var_screeninfo *vinfo){
     INFO("resolution: %u x %u\n", vinfo->xres, vinfo->yres);
     INFO("virtual-resolution: %u x %u\n", vinfo->xres_virtual, vinfo->yres_virtual);
@@ -63,6 +73,7 @@ void dump_fix_screeninfo(struct fb_fix_screeninfo *finfo){
     INFO("smem_len: %lu\n", finfo->smem_len);
     INFO("line_length: %u\n", finfo->line_length);
 }
+*/
 int getColorFormat(int color) {
     if(color <= MAX_COLOR_RGB565) {
         return COLOR_FORMAT_RGB565;
@@ -130,8 +141,8 @@ int RGB888ToRGB565(int rgb888_color){
 unsigned int getLocation(int x, int y){
     unsigned int location = -1;
     if(shape_fb_info.initialized){
-        location = (y + shape_fb_info.vinfo->yoffset) * (shape_fb_info.line_size) +
-                   (x + shape_fb_info.vinfo->xoffset) * (shape_fb_info.vinfo->bits_per_pixel / 8);
+        location = (y + shape_fb_info.yoffset) * (shape_fb_info.line_size) +
+                   (x + shape_fb_info.xoffset) * (shape_fb_info.bpp / 8);
     } else {
         printf("Error:Framebuffer has not been initialized\n");
     }
@@ -153,8 +164,9 @@ void setPixel(int x, int y, int color, int colorFormat){
     int alpha = 0xff;
     getColorFields(color, &r, &g, &b, &alpha, colorFormat);
 
-    int bpp = shape_fb_info.vinfo->bits_per_pixel;
-    INFO("red: %d, green: %d, blue: %d, bpp: %d\n", r, g, b, bpp);
+    unsigned int bpp = shape_fb_info.bpp;
+    INFO("bpp: %u\n", shape_fb_info.bpp);
+//    INFO("red: %d, green: %d, blue: %d, bpp: %u\n", r, g, b, bpp);
     if(bpp == 16){
        INFO("Screen Color Format RGB565\n");
        unsigned short int t = r << 16 |
@@ -208,14 +220,19 @@ void init_framebuffer_info(struct shape_framebuffer_info *shape_fb_info){
         int line_size = vinfo.xres * vinfo.bits_per_pixel / 8;;
         shape_fb_info->framebuffer_fd = framebuffer_fd;
         shape_fb_info->fbp = fbp;
-        shape_fb_info->vinfo = &vinfo;
-        shape_fb_info->finfo = &finfo;
         shape_fb_info->screensize = screensize;
         shape_fb_info->initialized = 1;
         shape_fb_info->line_size = line_size;
-    } else {
-        printf("Havd initialized the framebuffer info\n");
-        return;
+        shape_fb_info->bpp  = vinfo.bits_per_pixel;
+        shape_fb_info->xres =vinfo.xres;
+        shape_fb_info->yres =vinfo.yres;
+        shape_fb_info->xres_virtual = vinfo.xres_virtual;
+        shape_fb_info->yres_virtual = vinfo.yres_virtual;
+        shape_fb_info->xoffset = vinfo.xoffset;
+        shape_fb_info->yoffset = vinfo.yoffset;
+    }else {
+            printf("Havd initialized the framebuffer info\n");
+            return;
     }
 }
 void free_framebuffer_info(struct shape_framebuffer_info *shape_fb_info){
