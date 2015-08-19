@@ -7,3 +7,4 @@ clean:
 	rm -rf *.gch
 	rm -f shape
 	rm -f logs/running.log
+	rm -f core
