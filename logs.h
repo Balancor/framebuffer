@@ -5,10 +5,7 @@ struct log_info{
     int logOpened;
 };
 
-struct log_info logInfo = {
-    -1,
-    0
-};
+struct log_info logInfo;
 
 void log_init();
 void log_v(const char* msg);
