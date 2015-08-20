@@ -248,7 +248,7 @@ void free_framebuffer_info(struct shape_framebuffer_info *shape_fb_info){
     }
 
 }
-void drawLine(int startx, int starty, int endx, int endy, int color){
+void drawLine_backup(int startx, int starty, int endx, int endy, int color){
     int dx = endx - startx;
     int dy = endy - starty;
     float k = 0.0, c = 0.0;
@@ -273,6 +273,36 @@ void drawLine(int startx, int starty, int endx, int endy, int color){
         }
     }
 }
+void drawLine(int startx, int starty, int endx, int endy, int color){
+    int dx = endx - startx;
+    int dy = endy - starty;
+    int ux = ((dx > 0) << 1) - 1;
+    int uy = ((dy > 0) << 1) - 1;
+    int x = startx, y = starty, eps;
+
+    eps = 0;
+    dx = abs(dx);
+    dy = abs(dy);
+    if(dx > dy){
+        for(x = startx; x != endx + ux; x+=ux){
+            setPixel(x, y, color, COLOR_FORMAT_RGB888);
+            eps += dy;
+            if((eps << 1) >= dx){
+                y += uy;
+                eps -= dx;
+            }
+        }
+    } else {
+        for(y = starty; y != endy + uy; y+=uy){
+            setPixel(x, y, color, COLOR_FORMAT_RGB888);
+            eps += dx;
+            if((eps << 1) >= dy){
+                x += ux;
+                eps -= dy;
+            }
+        }
+    }
+}
 int main()
 {
     if(!shape_fb_info.initialized){
@@ -283,7 +313,7 @@ int main()
 //    setPixel(600, 200, 0x00FF00, COLOR_FORMAT_RGB888);
 //      dump_var_screeninfo(shape_fb_info.vinfo);
 //      dump_fix_screeninfo(shape_fb_info.finfo);
-    drawLine(200,100, 600, 200, 0x00FF00);
+    drawLine(400,300, 200, 200, 0x00FF00);
     log_close();
     if(shape_fb_info.initialized){
         free_framebuffer_info(&shape_fb_info);
