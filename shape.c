@@ -304,6 +304,29 @@ void drawLine(int startx, int starty, int endx, int endy, int color){
         }
     }
 }
+void drawCircle(int x, int y, int R, int color){
+        int stepx, stepy, p;
+        stepx = 0;
+        stepy = R;
+        p = 3 - (R << 1);
+        for(;stepx <= stepy; stepx++){
+            setPixel( stepx + x, stepy + y, color, COLOR_FORMAT_RGB888);
+            setPixel(-stepx + x, stepy + y, color, COLOR_FORMAT_RGB888);
+            setPixel( stepx + x,-stepy + y, color, COLOR_FORMAT_RGB888);
+            setPixel(-stepx + x,-stepy + y, color, COLOR_FORMAT_RGB888);
+
+            setPixel( stepy + x, stepx + y, color, COLOR_FORMAT_RGB888);
+            setPixel(-stepy + x, stepx + y, color, COLOR_FORMAT_RGB888);
+            setPixel( stepy + x,-stepx + y, color, COLOR_FORMAT_RGB888);
+            setPixel(-stepy + x,-stepx + y, color, COLOR_FORMAT_RGB888);
+            if(p < 0){
+                p += ((stepx<<2) + 6);
+            } else {
+                p += (((stepx - stepy)<<2) + 10);
+                stepy--;
+            }
+        }
+};
 int main()
 {
     if(!shape_fb_info.initialized){
@@ -318,7 +341,8 @@ int main()
 //    setPixel(1365, 767, 0x00FF00, COLOR_FORMAT_RGB888);
 //      dump_var_screeninfo(shape_fb_info.vinfo);
 //      dump_fix_screeninfo(shape_fb_info.finfo);
-    drawLine(600,300, 800, 500, 0x00FF00);
+//    drawLine(600,300, 800, 500, 0x00FF00);
+    drawCircle(500, 500, 50, 0x00FF00);
     log_close();
     if(shape_fb_info.initialized){
         free_framebuffer_info(&shape_fb_info);
