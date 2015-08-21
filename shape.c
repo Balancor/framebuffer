@@ -141,7 +141,7 @@ int RGB888ToRGB565(int rgb888_color){
 unsigned int getLocation(int x, int y){
     unsigned int location = -1;
     if(shape_fb_info.initialized){
-        location = (y + shape_fb_info.yoffset) * (shape_fb_info.line_size) +
+        location = (y + shape_fb_info.yoffset - 1) * (shape_fb_info.line_size) +
                    (x + shape_fb_info.xoffset) * (shape_fb_info.bpp / 8);
     } else {
         printf("Error:Framebuffer has not been initialized\n");
@@ -166,7 +166,7 @@ void setPixel(int x, int y, int color, int colorFormat){
 
     unsigned int bpp = shape_fb_info.bpp;
     INFO("bpp: %u\n", shape_fb_info.bpp);
-//    INFO("red: %d, green: %d, blue: %d, bpp: %u\n", r, g, b, bpp);
+    INFO("red: %d, green: %d, blue: %d, alpha: %d, bpp: %u\n", r, g, b, alpha, bpp);
     if(bpp == 16){
        INFO("Screen Color Format RGB565\n");
        unsigned short int t = r << 16 |
@@ -217,7 +217,8 @@ void init_framebuffer_info(struct shape_framebuffer_info *shape_fb_info){
             perror("Error: Canot mmap");
             exit(-4);
         }
-        int line_size = vinfo.xres * vinfo.bits_per_pixel / 8;;
+//        int line_size = vinfo.xres * vinfo.bits_per_pixel / 8;
+        int line_size = finfo.line_length; 
         shape_fb_info->framebuffer_fd = framebuffer_fd;
         shape_fb_info->fbp = fbp;
         shape_fb_info->screensize = screensize;
@@ -310,10 +311,14 @@ int main()
     }
     log_init();
 
-//    setPixel(600, 200, 0x00FF00, COLOR_FORMAT_RGB888);
+//   setPixel(600, 1, 0x00FF00, COLOR_FORMAT_RGB888);
+//   setPixel(600, 2, 0x00FF00, COLOR_FORMAT_RGB888);
+//   setPixel(600, 3, 0x00FF00, COLOR_FORMAT_RGB888);
+//   setPixel(600, 4, 0x00FF00, COLOR_FORMAT_RGB888);
+//    setPixel(1365, 767, 0x00FF00, COLOR_FORMAT_RGB888);
 //      dump_var_screeninfo(shape_fb_info.vinfo);
 //      dump_fix_screeninfo(shape_fb_info.finfo);
-    drawLine(400,300, 200, 200, 0x00FF00);
+    drawLine(600,300, 800, 500, 0x00FF00);
     log_close();
     if(shape_fb_info.initialized){
         free_framebuffer_info(&shape_fb_info);

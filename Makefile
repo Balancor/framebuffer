@@ -1,6 +1,11 @@
-SRC_FILES := logs.c logs.h shape.c
+COMMON_FILES := logs.c logs.h
+SHAPE_SRC_FILES := shape.c
+DUMP_SRC_FILES := dump_framebuffer.c
 shape: $(SRC_FILES)
-	gcc -g -o shape $(SRC_FILES)
+	gcc -g -o shape $(COMMON_FILES) $(SHAPE_SRC_FILES)
+
+dump: dump_framebuffer.c
+	gcc -g -o dump $(COMMON_FILES) $(DUMP_SRC_FILES) 
 
 clean:
 	rm -rf *.o
