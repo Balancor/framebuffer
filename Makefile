@@ -5,7 +5,7 @@ shape: $(SRC_FILES)
 	gcc -g -o shape $(COMMON_FILES) $(SHAPE_SRC_FILES)
 
 dump: dump_framebuffer.c
-	gcc -g -o dump $(COMMON_FILES) $(DUMP_SRC_FILES) 
+	gcc -g -o dump $(DUMP_SRC_FILES) 
 
 clean:
 	rm -rf *.o
@@ -13,3 +13,4 @@ clean:
 	rm -f shape
 	rm -f logs/running.log
 	rm -f core
+	rm -f dump 
