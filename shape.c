@@ -327,6 +327,12 @@ void drawCircle(int x, int y, int R, int color){
             }
         }
 };
+void drawRectangle(int leftTopX, int leftTopY, int rightBottomX, int rightBottomY, int color){
+    drawLine(leftTopX, leftTopY, rightBottomX, leftTopY, color);
+    drawLine(rightBottomX, leftTopY, rightBottomX, rightBottomY, color);
+    drawLine(rightBottomX, rightBottomY, leftTopX, rightBottomY, color);
+    drawLine(leftTopX, rightBottomY, leftTopX, leftTopY, color);
+}
 int main()
 {
     if(!shape_fb_info.initialized){
@@ -342,7 +348,8 @@ int main()
 //      dump_var_screeninfo(shape_fb_info.vinfo);
 //      dump_fix_screeninfo(shape_fb_info.finfo);
 //    drawLine(600,300, 800, 500, 0x00FF00);
-    drawCircle(500, 500, 50, 0x00FF00);
+//    drawCircle(500, 500, 50, 0x00FF00);
+    drawRectangle(400, 400, 600,600, 0x00FF00);
     log_close();
     if(shape_fb_info.initialized){
         free_framebuffer_info(&shape_fb_info);
