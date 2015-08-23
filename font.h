@@ -54,4 +54,61 @@ unsigned long calcTableCheckSum(unsigned long* data, unsigned long length){
         sum += *data++;
     }
     return sum;
-}
+};
+
+struct FontHeader {
+    unsigned int tableVersion;
+    unsigned int fontVersion;
+    unsigned int checkSumAdjestment;
+    unsigned int magicNumber;
+    unsigned short flags;
+    unsigned short unitsPerEm;
+    char created;
+    char modified;
+
+    short xMin;
+    short yMin;
+    short xMax;
+    short yMax;
+
+    unsigned short macStyle;
+    unsigned short lowestRecPPEM;
+    unsigned short fontDirectionHint;
+    unsigned short indexToLocationFormat;
+    unsigned short glyphDataFormat;
+};
+
+struct CMAP { };
+
+struct GLFY { };
+
+struct TableMaxp {
+    unsigned int version;
+    unsigned short numGlypha;
+    unsigned short maxPoints;
+    unsigned short maxContours;
+    unsigned short maxCompositePoints;
+    unsigned short maxCompositeContours;
+    unsigned short maxZones;
+    unsigned short maxTwilightPoints;
+    unsigned short maxStorage;
+    unsigned short maxFunctionDefs;
+    unsigned short maxStackElements;
+    unsigned short maxSizeOfInstructions;
+    unsigned short maxComponentElements;
+    unsigned short maxComponentDepth;
+};
+
+struct Mmtx { };
+
+struct Loca { };
+
+struct Name { };
+
+struct Hmtx { };
+
+struct Kerm { };
+
+struct PostScriptInfo { };
+
+struct PCLT { };
