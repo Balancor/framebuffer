@@ -13,6 +13,9 @@ typedef struct _TableEntryNode{
     struct ListNode listNode;
 }TableEntryNode;
 
+struct TableDirectory tableDirectory;
+TableEntryNode *tableEntryNode;
+struct ListNode tableEntryList;
 
 void readEntry(const char* data,struct TableEntry *tableEntry, int offset){
     tableEntry->tag[0] = data[offset];
@@ -38,11 +41,8 @@ void readEntry(const char* data,struct TableEntry *tableEntry, int offset){
            (data[offset + 15] & 0xFF);
 }
 
+
 int initFontInfo(){
-    TableEntryNode *tableEntryNode;
-    TableEntryNode *tempTableEntryNode;
-    struct ListNode tableEntryList;
-    struct ListNode *node;
 
     initListNode(&tableEntryList);
 
@@ -71,7 +71,6 @@ int initFontInfo(){
 
     read(fd, data, MAX_HEADER);
 
-    struct TableDirectory tableDirectory;
     tableDirectory.sfntVersion =
             (data[0] & 0xFF) << 24 |
             (data[1] & 0xFF) << 16 |
@@ -105,6 +104,16 @@ int initFontInfo(){
         readEntry(data, &(tableEntryNode[i].tableEntry), 12 + i*sizeof(struct TableEntry));
         addTailListNode(&tableEntryList, &(tableEntryNode[i].listNode));
     }
+    free(data);
+    close(fd);
+}
+
+
+int main()
+{
+    TableEntryNode *tempTableEntryNode;
+    struct ListNode *node;
+    initFontInfo();
 
     printf("TableEntry: \n");
     list_for_each(node, &tableEntryList){
@@ -117,17 +126,9 @@ int initFontInfo(){
         printf("\t length: %u\n", tempTableEntryNode->tableEntry.length);
     }
 
-    free(tableEntryNode);
-    free(data);
-    close(fd);
-}
-
-
-int main()
-{
-    initFontInfo();
     printf("sizeof(unsigned long): %d\n", sizeof(unsigned long));
     printf("sizeof(unsigned shoar): %d\n", sizeof(unsigned short));
     printf("sizeof(int)： %d\n", sizeof(int));
+    free(tableEntryNode);
     return 0;
 }
