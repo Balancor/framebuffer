@@ -131,7 +131,7 @@ typedef struct {
     unsigned short reservedPad;
     short* startCount; //should have segCount;
     short* idDelta; //should have segCount;
-    short* idRangeOffset //should have segCount;
+    short* idRangeOffset; //should have segCount;
     struct UnsignedShortList glyphIndexArray;
 }CmapSegmentMappingToDelta;
 
