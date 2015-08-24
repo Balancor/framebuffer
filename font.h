@@ -30,6 +30,12 @@
 #define FONT_DIRECTORY  "data"
 #define FONT_FILE "FreeMono.ttf"
 
+struct UnsignedShortList{
+    unsigned short data;
+    struct UnsignedShortList *next;
+    struct UnsignedShortList *prev;
+};
+
 struct TableEntry{
     char tag[4]; // four character for tag, the end character for '\0'
     unsigned int checksum;
@@ -78,6 +84,65 @@ struct FontHeader {
     unsigned short glyphDataFormat;
 };
 
+typedef struct {
+    unsigned short tableVersion;
+    unsigned short numOfTable;
+}CmapHeader;
+
+typedef struct {
+    unsigned short platformId;
+    unsigned short encodingId;
+    unsigned int offset;
+}CmapEntry;
+
+typedef struct {
+    unsigned short format; //should be 0
+    unsigned short length;
+    unsigned short version;
+    char glyIdArray[256];
+}CmapByteEncodingTable;
+
+typedef struct{
+        unsigned short firstCode;
+        unsigned short entryCount;
+        short idDelta;
+        unsigned short idRangeOffset;
+}subHeaders;
+
+typedef struct {
+    unsigned short format; //should be 2
+    unsigned short length;
+    unsigned short version;
+    unsigned short subHeaderKeys[256];
+    subHeaders subHeaders1[4];
+    subHeaders subHeaders2[4];
+    struct UnsignedShortList glyphIndexArray;
+}CmapHighbyteMappingTable;
+
+typedef struct {
+    unsigned short format; //should be 4;
+    unsigned short length;
+    unsigned short version;
+    unsigned short segCountX2;
+    unsigned short searchRange;
+    unsigned short entrySelector;
+    unsigned short rangeShift;
+    short* endCount; //should have segCount 
+    unsigned short reservedPad;
+    short* startCount; //should have segCount;
+    short* idDelta; //should have segCount;
+    short* idRangeOffset //should have segCount;
+    struct UnsignedShortList glyphIndexArray;
+}CmapSegmentMappingToDelta;
+
+typedef struct{
+    unsigned short format; //should be 6;
+    unsigned short length;
+    unsigned short version;
+    unsigned short firstCode;
+    unsigned short entryCount;
+    unsigned short* glyphIdArray; //should have entryCount
+}CmapTrimmedTable;
 struct CMAP { };
 
 struct GLFY { };

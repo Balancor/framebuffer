@@ -17,6 +17,14 @@ struct TableDirectory tableDirectory;
 TableEntryNode *tableEntryNode;
 struct ListNode tableEntryList;
 
+void dumpTableEntry(struct TableEntry *tableEntry){
+    printf("TableEntry:\n");
+    printf("\t tag: %c%c%c%c\n", tableEntry->tag[0], tableEntry->tag[1],
+                                 tableEntry->tag[2], tableEntry->tag[3]);
+    printf("\t checksum: %d\n", tableEntry->checksum);
+    printf("\t offset: %d\n", tableEntry->offset);
+    printf("\t length: %d\n", tableEntry->length);
+}
 void readEntry(const char* data,struct TableEntry *tableEntry, int offset){
     tableEntry->tag[0] = data[offset];
     tableEntry->tag[1] = data[offset + 1];
@@ -120,16 +128,10 @@ int main()
     struct ListNode *node;
     initFontInfo();
 
-    list_for_each(node, &tableEntryList){
-        tempTableEntryNode = listEntry(node, TableEntryNode, listNode);
-        if(!strncmp(tempTableEntryNode->tableEntry.tag, "cmap", 4)) break;
-    }
-    printf("\t tag: %c%c%c%c\n",
-                    tempTableEntryNode->tableEntry.tag[0], tempTableEntryNode->tableEntry.tag[1],
-                    tempTableEntryNode->tableEntry.tag[2], tempTableEntryNode->tableEntry.tag[3]);
-    printf("\t checksum: %u\n", tempTableEntryNode->tableEntry.checksum);
-    printf("\t offset: %u\n", tempTableEntryNode->tableEntry.offset);
-    printf("\t length: %u\n", tempTableEntryNode->tableEntry.length);
+    struct TableEntry tempTableEntry;
+    tempTableEntry = getTableEntry("cmap");
+
+    dumpTableEntry(&tempTableEntry);
 
     free(tableEntryNode);
     return 0;
