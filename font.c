@@ -89,14 +89,6 @@ int initFontInfo(){
             (data[10] & 0xFF) << 8 |
             (data[11] & 0xFF);
 
-    printf("TableDirectory: \n");
-    printf("\t sfntVersion: %d\n", tableDirectory.sfntVersion);
-    printf("\t numTables: %u\n", tableDirectory.numTables);
-    printf("\t searchRange: %u\n", tableDirectory.searchRange);
-    printf("\t entrySelector: %u\n", tableDirectory.entrySelector);
-    printf("\t rangeShift: %u\n",tableDirectory.rangeShift);
-
-
     tableEntryNode = malloc(sizeof(TableEntryNode) * tableDirectory.numTables);
 
     int i = 0;
@@ -108,6 +100,19 @@ int initFontInfo(){
     close(fd);
 }
 
+struct TableEntry getTableEntry(const char* tag){
+    TableEntryNode *tempTableEntryNode = 0;
+    struct ListNode *node;
+    int found = 0;
+    list_for_each(node, &tableEntryList){
+        tempTableEntryNode = listEntry(node, TableEntryNode, listNode);
+        if(!strncmp(tempTableEntryNode->tableEntry.tag, tag, 4)){
+            found = 1;
+            break;
+        }
+    }
+    if(found) return tempTableEntryNode->tableEntry;
+}
 
 int main()
 {
@@ -115,20 +120,17 @@ int main()
     struct ListNode *node;
     initFontInfo();
 
-    printf("TableEntry: \n");
     list_for_each(node, &tableEntryList){
         tempTableEntryNode = listEntry(node, TableEntryNode, listNode);
-        printf("\t tag: %c%c%c%c\n",
-                        tempTableEntryNode->tableEntry.tag[0], tempTableEntryNode->tableEntry.tag[1],
-                        tempTableEntryNode->tableEntry.tag[2], tempTableEntryNode->tableEntry.tag[3]);
-        printf("\t checksum: %u\n", tempTableEntryNode->tableEntry.checksum);
-        printf("\t offset: %u\n", tempTableEntryNode->tableEntry.offset);
-        printf("\t length: %u\n", tempTableEntryNode->tableEntry.length);
+        if(!strncmp(tempTableEntryNode->tableEntry.tag, "cmap", 4)) break;
     }
+    printf("\t tag: %c%c%c%c\n",
+                    tempTableEntryNode->tableEntry.tag[0], tempTableEntryNode->tableEntry.tag[1],
+                    tempTableEntryNode->tableEntry.tag[2], tempTableEntryNode->tableEntry.tag[3]);
+    printf("\t checksum: %u\n", tempTableEntryNode->tableEntry.checksum);
+    printf("\t offset: %u\n", tempTableEntryNode->tableEntry.offset);
+    printf("\t length: %u\n", tempTableEntryNode->tableEntry.length);
 
-    printf("sizeof(unsigned long): %d\n", sizeof(unsigned long));
-    printf("sizeof(unsigned shoar): %d\n", sizeof(unsigned short));
-    printf("sizeof(int)： %d\n", sizeof(int));
     free(tableEntryNode);
     return 0;
 }
