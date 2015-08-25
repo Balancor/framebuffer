@@ -98,7 +98,7 @@ typedef struct {
 typedef struct {
     unsigned short format; //should be 0
     unsigned short length;
-    unsigned short version;
+    unsigned short language;
     char glyIdArray[256];
 }CmapByteEncodingTable;
 
@@ -127,7 +127,7 @@ typedef struct {
     unsigned short searchRange;
     unsigned short entrySelector;
     unsigned short rangeShift;
-    short* endCount; //should have segCount 
+    short* endCount; //should have segCount
     unsigned short reservedPad;
     short* startCount; //should have segCount;
     short* idDelta; //should have segCount;

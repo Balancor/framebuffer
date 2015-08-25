@@ -8,14 +8,24 @@
 #include "utils.h"
 #define MAX_HEADER 512
 
+char *data;
 typedef struct _TableEntryNode{
     struct TableEntry tableEntry;
     struct ListNode listNode;
 }TableEntryNode;
 
+
 struct TableDirectory tableDirectory;
 TableEntryNode *tableEntryNode;
 struct ListNode tableEntryList;
+
+typedef struct _CmapSubtableEntryNode {
+    CmapEntry cmapSubtableEntry;
+    struct ListNode listNode;
+}CmapSubtableNode;
+
+CmapSubtableNode *cmapSubtableNode;
+struct ListNode cmapSubtableEntryList;
 
 void dumpTableEntry(struct TableEntry *tableEntry){
     printf("TableEntry:\n");
@@ -52,7 +62,6 @@ void readEntry(const char* data,struct TableEntry *tableEntry, int offset){
 
 int initFontInfo(){
 
-    initListNode(&tableEntryList);
 
     int fd = -1;
     unsigned long fileSize = 0;
@@ -73,11 +82,14 @@ int initFontInfo(){
     lseek(fd, 0, SEEK_SET);
 
     int headerLength = sizeof(struct TableEntry) + sizeof(struct TableDirectory);
-    printf("headerLength: %d\n", headerLength);
 
-    char *data =(char*)malloc(MAX_HEADER);
-
-    read(fd, data, MAX_HEADER);
+    data =(char*)malloc(fileSize);
+    if(!data){
+        printf("Error: Cannot malloc the memory\n");
+    }
+    if( fileSize != read(fd, data, fileSize)) {
+        printf("Error: Cannot read the content of the font file\n");
+    }
 
     tableDirectory.sfntVersion =
             (data[0] & 0xFF) << 24 |
@@ -97,6 +109,7 @@ int initFontInfo(){
             (data[10] & 0xFF) << 8 |
             (data[11] & 0xFF);
 
+    initListNode(&tableEntryList);
     tableEntryNode = malloc(sizeof(TableEntryNode) * tableDirectory.numTables);
 
     int i = 0;
@@ -104,7 +117,6 @@ int initFontInfo(){
         readEntry(data, &(tableEntryNode[i].tableEntry), 12 + i*sizeof(struct TableEntry));
         addTailListNode(&tableEntryList, &(tableEntryNode[i].listNode));
     }
-    free(data);
     close(fd);
 }
 
@@ -122,17 +134,74 @@ struct TableEntry getTableEntry(const char* tag){
     if(found) return tempTableEntryNode->tableEntry;
 }
 
-int main()
-{
-    TableEntryNode *tempTableEntryNode;
-    struct ListNode *node;
-    initFontInfo();
-
+void readCmapSubtables(){
     struct TableEntry tempTableEntry;
     tempTableEntry = getTableEntry("cmap");
 
-    dumpTableEntry(&tempTableEntry);
+    char* tablePtr = data + tempTableEntry.offset;
+    char* endTablePrt = tablePtr + tempTableEntry.length;
 
+    CmapHeader cmapHeader;
+    cmapHeader.tableVersion = (tablePtr[0] & 0xFF) << 8 |
+                              (tablePtr[1] & 0xFF);
+    cmapHeader.numOfTable =   (tablePtr[2] & 0xFF) << 8 |
+                              (tablePtr[3] & 0xFF);
+
+    printf("CmapHeader: \n");
+    printf("\t tableVersion: %d\n", cmapHeader.tableVersion);
+    printf("\t numTables: %d\n", cmapHeader.numOfTable);
+
+    initListNode(&cmapSubtableEntryList);
+    int subTableLength = sizeof(CmapEntry);
+    printf("subTableLength: %d\n", subTableLength);
+    cmapSubtableNode = (CmapSubtableNode *)malloc(subTableLength * cmapHeader.numOfTable);
+    if(!cmapSubtableNode){
+        printf("Error: Cannot get enough memory!\n");
+    }
+    printf("cmapSubtableNode: 0x%x\n", cmapSubtableNode);
+    int i = 0;
+    CmapEntry cmapEntry;
+    char* subTableEntryPtr = tablePtr + 4;
+    for (i = 0; i < cmapHeader.numOfTable; i++){
+        cmapSubtableNode[i].cmapSubtableEntry.platformId =
+                                         (subTableEntryPtr[subTableLength * i] & 0xFF) << 8 |
+                                         (subTableEntryPtr[subTableLength * i + 1] & 0xFF);
+
+        cmapSubtableNode[i].cmapSubtableEntry.encodingId =
+                                         (subTableEntryPtr[subTableLength * i + 2] & 0xFF) << 8 |
+                                         (subTableEntryPtr[subTableLength * i + 3] & 0xFF);
+
+        cmapSubtableNode[i].cmapSubtableEntry.offset     =
+                                         (subTableEntryPtr[subTableLength * i + 4] & 0xFF) << 24 |
+                                         (subTableEntryPtr[subTableLength * i + 5] & 0xFF) << 16 |
+                                         (subTableEntryPtr[subTableLength * i + 6] & 0xFF) << 8 |
+                                         (subTableEntryPtr[subTableLength * i + 7] & 0xFF);
+        addTailListNode(&cmapSubtableEntryList , &(cmapSubtableNode[i].listNode));
+    }
+}
+
+
+int main()
+{
+    TableEntryNode *tempTableEntryNode;
+    CmapSubtableNode *tempCmapSubtableNode;
+    struct ListNode *node;
+    initFontInfo();
+    readCmapSubtables();
+
+
+    list_for_each(node, &cmapSubtableEntryList){
+        tempCmapSubtableNode = listEntry(node, CmapSubtableNode, listNode);
+        printf("CmapEntry: \n");
+        printf("\t platformId: %u\n", tempCmapSubtableNode->cmapSubtableEntry.platformId);
+        printf("\t encodingId: %u\n", tempCmapSubtableNode->cmapSubtableEntry.encodingId);
+        printf("\t offset: %u\n", tempCmapSubtableNode->cmapSubtableEntry.offset);
+    }
+
+
+    printf("cmapSubtableNode: 0x%x\n", cmapSubtableNode);
+    free(cmapSubtableNode);
     free(tableEntryNode);
+    free(data);
     return 0;
 }
