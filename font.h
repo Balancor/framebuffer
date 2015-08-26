@@ -41,10 +41,9 @@
 #define FONT_DIRECTORY  "data"
 #define FONT_FILE "FreeMono.ttf"
 
-struct UnsignedShortList {
+struct UnsignedShorNode{
     unsigned short data;
-    struct UnsignedShortList* prev;
-    struct UnsignedShortList* next;
+    struct ListNode listNode;
 };
 
 typedef struct{
@@ -54,8 +53,7 @@ typedef struct{
         unsigned short idRangeOffset;
 }SubHeaders;
 
-
-struct SubHeadersList{
+struct SubHeadersNode{
     SubHeaders subHeaders;
     struct ListNode listNode;
 };
@@ -132,17 +130,15 @@ typedef struct {
     unsigned short format; //should be 2
     unsigned short length;
     unsigned short language;
-    unsigned short version;
     unsigned short subHeaderKeys[256];
-    struct SubHeadersList subHeadersList;
-    struct UnsignedShortList glyphIndexArray;
+    struct ListNode subHeadersList; //List of SubHeadersNode;
+    struct ListNode glyphIndexArray; //List of UnsignedShorNode
 }CmapHighbyteMappingTable;
 
 typedef struct {
     unsigned short format; //should be 4;
     unsigned short length;
     unsigned short language;
-    unsigned short version;
     unsigned short segCountX2;
     unsigned short searchRange;
     unsigned short entrySelector;
@@ -152,17 +148,74 @@ typedef struct {
     short* startCount; //should have segCount;
     short* idDelta; //should have segCount;
     short* idRangeOffset; //should have segCount;
-    struct UnsignedShortList glyphIndexArray;
+    struct ListNode glyphIndexArray; // List of UnsignedShorNode
 }CmapSegmentMappingToDelta;
 
 typedef struct{
     unsigned short format; //should be 6;
     unsigned short length;
-    unsigned short version;
+    unsigned short language;
     unsigned short firstCode;
     unsigned short entryCount;
     unsigned short* glyphIdArray; //should have entryCount
 }CmapTrimmedTable;
+
+typedef struct {
+    unsigned short format; // should be 8
+    unsigned short reserved; //set to 0
+    unsigned int length;
+    unsigned int  language;
+    char is32[8192];
+    unsigned int nGroups;
+}CmapMixed16Bit32Bit;
+
+typedef struct {
+    unsigned int startCharCode;
+    unsigned int endCharCode;
+    unsigned int startGlyphId;
+}CmapMixed16Bit32BitGroup;
+
+typedef struct {
+    unsigned short format; //should be 10
+    unsigned short reserved;
+    unsigned int length;
+    unsigned int language;
+    unsigned int startCharCode;
+    unsigned int numChars;
+    struct ListNode glyphs; //List of UnsignedShorNode
+}CmapTrimmedArray;
+
+typedef struct {
+    unsigned short format; //should be 12
+    unsigned short reserved;
+    unsigned int length;
+    unsigned int language;
+    unsigned int nGroups;
+}CmapSegmentedCoverage;
+
+typedef struct {
+    unsigned short format; //should be 13
+    unsigned short reserved;
+    unsigned int length;
+    unsigned int language;
+    unsigned int nGroups;
+}CmapManyToOne;
+
+typedef struct {
+    unsigned short format; //should be 14
+    unsigned int length;
+    unsigned int numVarSelectorRecords;
+}CmapUnicodeVariation;
+
+typedef struct {
+    typedef struct{
+        unsigned short highBytes;
+        char lowByte;
+    }varSelector;
+    unsigned int defaultUVSOffset;
+    unsigned int nonDefaultUVSOffset;
+}VariationSelector;
+
 struct CMAP { };
 
 struct GLFY { };
