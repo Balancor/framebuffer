@@ -1,3 +1,5 @@
+#include "utils.h"
+
 #define DIRECTORY_TAG_CMAP "cmap" //character to glyph mapping
 #define DIRECTORY_TAG_GLFY "glyf" // glyph data
 #define DIRECTORY_TAG_HEAD "head" //font header
@@ -24,17 +26,40 @@
 #define DIRECTORY_TAG_VHEA "vhea" //Vertical Metrics header
 #define DIRECTORY_TAG_VMTX "vmtx" //Vertical Metrics
 
+#define CMAP_SUBTABLE_FORMAT_BYTE 0
+#define CMAP_SUBTABLE_FORMAT_HIGH_BYTE 2
+#define CMAP_SUBTABLE_FORMAT_SEGMENT 4
+#define CMAP_SUBTABLE_FORMAT_TRIMMED 6
+#define CMAP_SUBTABLE_FORMAT_MIXED 8
+#define CMAP_SUBTABLE_FORMAT_TRIMMED_ARRAY 10
+#define CMAP_SUBTABLE_FORMAT_SEGMENT_COVERAGE 12
+#define CMAP_SUBTABLE_FORMAT_MANY_TO_ONE 13
+#define CMAP_SUBTABLE_FORMAT_UNICODE 14
 
 #define MAX_SIZE 256
 
 #define FONT_DIRECTORY  "data"
 #define FONT_FILE "FreeMono.ttf"
 
-struct UnsignedShortList{
+struct UnsignedShortList {
     unsigned short data;
-    struct UnsignedShortList *next;
-    struct UnsignedShortList *prev;
+    struct UnsignedShortList* prev;
+    struct UnsignedShortList* next;
 };
+
+typedef struct{
+        unsigned short firstCode;
+        unsigned short entryCount;
+        short idDelta;
+        unsigned short idRangeOffset;
+}SubHeaders;
+
+
+struct SubHeadersList{
+    SubHeaders subHeaders;
+    struct ListNode listNode;
+};
+
 
 struct TableEntry{
     char tag[4]; // four character for tag, the end character for '\0'
@@ -102,26 +127,21 @@ typedef struct {
     char glyIdArray[256];
 }CmapByteEncodingTable;
 
-typedef struct{
-        unsigned short firstCode;
-        unsigned short entryCount;
-        short idDelta;
-        unsigned short idRangeOffset;
-}subHeaders;
 
 typedef struct {
     unsigned short format; //should be 2
     unsigned short length;
+    unsigned short language;
     unsigned short version;
     unsigned short subHeaderKeys[256];
-    subHeaders subHeaders1[4];
-    subHeaders subHeaders2[4];
+    struct SubHeadersList subHeadersList;
     struct UnsignedShortList glyphIndexArray;
 }CmapHighbyteMappingTable;
 
 typedef struct {
     unsigned short format; //should be 4;
     unsigned short length;
+    unsigned short language;
     unsigned short version;
     unsigned short segCountX2;
     unsigned short searchRange;

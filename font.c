@@ -5,7 +5,6 @@
 #include <unistd.h>
 
 #include "font.h"
-#include "utils.h"
 #define MAX_HEADER 512
 
 char *data;
@@ -22,6 +21,7 @@ struct ListNode tableEntryList;
 typedef struct _CmapSubtableEntryNode {
     CmapEntry cmapSubtableEntry;
     struct ListNode listNode;
+    unsigned int offsetToBeginFile;
 }CmapSubtableNode;
 
 CmapSubtableNode *cmapSubtableNode;
@@ -120,7 +120,7 @@ int initFontInfo(){
     close(fd);
 }
 
-struct TableEntry getTableEntry(const char* tag){
+struct TableEntry* getTableEntry(const char* tag){
     TableEntryNode *tempTableEntryNode = 0;
     struct ListNode *node;
     int found = 0;
@@ -131,25 +131,21 @@ struct TableEntry getTableEntry(const char* tag){
             break;
         }
     }
-    if(found) return tempTableEntryNode->tableEntry;
+    if(found) return &(tempTableEntryNode->tableEntry);
 }
 
 void readCmapSubtables(){
-    struct TableEntry tempTableEntry;
+    struct TableEntry *tempTableEntry;
     tempTableEntry = getTableEntry("cmap");
-
-    char* tablePtr = data + tempTableEntry.offset;
-    char* endTablePrt = tablePtr + tempTableEntry.length;
+    if(tempTableEntry == NULL) return;
+    char* tablePtr = data + tempTableEntry->offset;
+    char* endTablePrt = tablePtr + tempTableEntry->length;
 
     CmapHeader cmapHeader;
     cmapHeader.tableVersion = (tablePtr[0] & 0xFF) << 8 |
                               (tablePtr[1] & 0xFF);
     cmapHeader.numOfTable =   (tablePtr[2] & 0xFF) << 8 |
                               (tablePtr[3] & 0xFF);
-
-    printf("CmapHeader: \n");
-    printf("\t tableVersion: %d\n", cmapHeader.tableVersion);
-    printf("\t numTables: %d\n", cmapHeader.numOfTable);
 
     initListNode(&cmapSubtableEntryList);
     int subTableLength = sizeof(CmapEntry);
@@ -164,6 +160,7 @@ void readCmapSubtables(){
     CmapEntry cmapEntry;
     char* subTableEntryPtr = tablePtr + 4;
     for (i = 0; i < cmapHeader.numOfTable; i++){
+        cmapSubtableNode[i].offsetToBeginFile = tempTableEntry->offset;
         cmapSubtableNode[i].cmapSubtableEntry.platformId =
                                          (subTableEntryPtr[subTableLength * i] & 0xFF) << 8 |
                                          (subTableEntryPtr[subTableLength * i + 1] & 0xFF);
@@ -181,6 +178,96 @@ void readCmapSubtables(){
     }
 }
 
+CmapSubtableNode* getCmapEntry(unsigned short platformId, unsigned short encodingId){
+    if(platformId < 0 || encodingId < 0)return (CmapSubtableNode*)0;
+    CmapSubtableNode *tempCmapSubtableNode;
+    struct ListNode *node;
+    list_for_each(node, &cmapSubtableEntryList){
+        tempCmapSubtableNode = listEntry(node, CmapSubtableNode, listNode);
+        if ( (tempCmapSubtableNode->cmapSubtableEntry.platformId == platformId) &&
+             (tempCmapSubtableNode->cmapSubtableEntry.encodingId == encodingId)){
+            break;
+        }
+    }
+    return tempCmapSubtableNode;
+}
+
+static inline unsigned short
+readUnsignedShort(const char* contentPtr){
+    unsigned short temp  = ((*(contentPtr++)) & 0xFF) << 8;
+                   temp |= ((*(contentPtr++)) & 0xFF);
+    return temp;
+}
+void readEncodingTable(unsigned short platformId, unsigned short encodingId){
+    if(platformId < 0 || encodingId < 0)return;
+    CmapSubtableNode *tempCmapSubtableNode = getCmapEntry(platformId, encodingId);
+    if(tempCmapSubtableNode == NULL) return;
+    unsigned int encodingTableOffset = tempCmapSubtableNode->offsetToBeginFile + tempCmapSubtableNode->cmapSubtableEntry.offset;
+    char* encodingTablePtr = data + encodingTableOffset;
+    unsigned short format = 0;
+    format  = ((*(encodingTablePtr++)) & 0xFF) << 8; 
+    format |= ((*(encodingTablePtr++)) & 0xFF);
+//    format = ((*(encodingTablePtr)) & 0xFF) << 8 |
+//             ((*(++encodingTablePtr)) & 0xFF);
+//    format = ((encodingTablePtr[0]) & 0xFF) << 8 |
+//             ((encodingTablePtr[1]) & 0xFF);
+    printf("format: %u\n", format);
+    switch(format){
+        case CMAP_SUBTABLE_FORMAT_BYTE:
+            {
+                CmapByteEncodingTable cmapByteEncodingTable;
+                cmapByteEncodingTable.format = format;
+                cmapByteEncodingTable.length = readUnsignedShort(encodingTablePtr);
+                cmapByteEncodingTable.language = readUnsignedShort(encodingTablePtr);
+                int i = 0;
+                for(i = 0; i < 256; i++){
+                    cmapByteEncodingTable.glyIdArray[i] = (*(encodingTablePtr++) & 0xFF);
+                }
+                printf("length: %d\n", cmapByteEncodingTable.length);
+                printf("language: %d\n", cmapByteEncodingTable.language);
+                break;
+            }
+        case CMAP_SUBTABLE_FORMAT_HIGH_BYTE:
+            {
+                printf("CmapHighbyteMappingTable empty\n");
+                break;
+            }
+        case CMAP_SUBTABLE_FORMAT_SEGMENT:
+            {
+                printf("CmapSegmentMappingToDelta empty\n");
+                break;
+            }
+        case CMAP_SUBTABLE_FORMAT_TRIMMED:
+            {
+                printf("CmapTrimmedTable empty\n");
+                break;
+            }
+        case CMAP_SUBTABLE_FORMAT_MIXED:
+            {
+                break;
+            }
+        case CMAP_SUBTABLE_FORMAT_TRIMMED_ARRAY:
+            {
+                break;
+            }
+        case CMAP_SUBTABLE_FORMAT_SEGMENT_COVERAGE:
+            {
+                break;
+            }
+        case CMAP_SUBTABLE_FORMAT_MANY_TO_ONE:
+            {
+                break;
+            }
+        case CMAP_SUBTABLE_FORMAT_UNICODE:
+            {
+                break;
+            }
+        default:
+            {
+                break;
+            }
+    }
+}
 
 int main()
 {
@@ -191,14 +278,23 @@ int main()
     readCmapSubtables();
 
 
+    unsigned short platformId = -1, encodingId = -1;
     list_for_each(node, &cmapSubtableEntryList){
         tempCmapSubtableNode = listEntry(node, CmapSubtableNode, listNode);
-        printf("CmapEntry: \n");
-        printf("\t platformId: %u\n", tempCmapSubtableNode->cmapSubtableEntry.platformId);
-        printf("\t encodingId: %u\n", tempCmapSubtableNode->cmapSubtableEntry.encodingId);
-        printf("\t offset: %u\n", tempCmapSubtableNode->cmapSubtableEntry.offset);
+//        printf("tempCmapSubtableNode: offsetToBeginFile: %d\n", tempCmapSubtableNode->offsetToBeginFile);
+//        printf("CmapEntry: \n");
+        platformId = tempCmapSubtableNode->cmapSubtableEntry.platformId;
+        encodingId = tempCmapSubtableNode->cmapSubtableEntry.encodingId;
+//        printf("\t platformId: %u\n", platformId);
+//        printf("\t encodingId: %u\n", encodingId);
+//        printf("\t offset: %u\n", tempCmapSubtableNode->cmapSubtableEntry.offset);
+        readEncodingTable(platformId, encodingId);
+
     }
 
+    int i  = 10;
+//    printf("i++: %d\n", i++);
+//    printf("++i: %d\n", ++i);
     free(cmapSubtableNode);
     free(tableEntryNode);
     free(data);
