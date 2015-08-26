@@ -153,12 +153,13 @@ void readCmapSubtables(){
 
     initListNode(&cmapSubtableEntryList);
     int subTableLength = sizeof(CmapEntry);
-    printf("subTableLength: %d\n", subTableLength);
-    cmapSubtableNode = (CmapSubtableNode *)malloc(subTableLength * cmapHeader.numOfTable);
+
+    cmapSubtableNode = (CmapSubtableNode *)malloc(sizeof(CmapSubtableNode) * cmapHeader.numOfTable);
+
     if(!cmapSubtableNode){
         printf("Error: Cannot get enough memory!\n");
     }
-    printf("cmapSubtableNode: 0x%x\n", cmapSubtableNode);
+
     int i = 0;
     CmapEntry cmapEntry;
     char* subTableEntryPtr = tablePtr + 4;
@@ -198,8 +199,6 @@ int main()
         printf("\t offset: %u\n", tempCmapSubtableNode->cmapSubtableEntry.offset);
     }
 
-
-    printf("cmapSubtableNode: 0x%x\n", cmapSubtableNode);
     free(cmapSubtableNode);
     free(tableEntryNode);
     free(data);
