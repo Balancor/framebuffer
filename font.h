@@ -207,12 +207,14 @@ typedef struct {
     unsigned int numVarSelectorRecords;
 }CmapUnicodeVariation;
 
-typedef struct {
-    typedef struct{
+typedef struct{
         unsigned short highBytes;
         char lowByte;
-    }varSelector;
+}VarSelector;
+
+typedef struct {
     unsigned int defaultUVSOffset;
+    VarSelector varSelector;
     unsigned int nonDefaultUVSOffset;
 }VariationSelector;
 
