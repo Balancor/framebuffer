@@ -298,20 +298,20 @@ void readEncodingTable(unsigned short platformId, unsigned short encodingId){
                     cmapSegment.idDelta[i] = readUnsignedShort(encodingTablePtr + tempOffset);
                 }
 
+                int j = 0;
+                initListNode(&(cmapSegment.glyphIndexArray));
                 tempOffset = tempOffset + 2;
                 cmapSegment.idRangeOffset = (unsigned short*)malloc(sizeof(unsigned short) * segCount);
                 for(i = 0; i < segCount; i++){
                     tempOffset += i * 2;
                     cmapSegment.idRangeOffset[i] = readUnsignedShort(encodingTablePtr + tempOffset);
+                    if(!(cmapSegment.idRangeOffset[i])){
+                        struct UnsignedShorNode unsignedShortNode;
+                        unsignedShortNode.data = readUnsignedShort(encodingTablePtr + tempOffset + 2);
+                        tempOffset += 2;
+                        addTailListNode(&(cmapSegment.glyphIndexArray), &(unsignedShortNode.listNode));
+                    }
                 }
-                /**********************************************************
-                 **********************************************************
-                 *******                                            *******
-                 *******  I do not know how to set glyphIndexArray  *******
-                 *******                                            *******
-                 * *********************************************************
-                 * *********************************************************
-                 * */
                 printf("CmapSegmentMappingToDelta empty\n");
 
                 free(cmapSegment.endCount);
