@@ -59,21 +59,21 @@ struct SubHeadersNode{
 };
 
 
-struct TableEntry{
+typedef struct TableEntry{
     char tag[4]; // four character for tag, the end character for '\0'
     unsigned int checksum;
     unsigned int offset;
     unsigned int length;
-};
+}TableEntry;
 
-struct TableDirectory {
+typedef struct TableDirectory {
     int sfntVersion;
     unsigned short numTables;
     unsigned short searchRange;
     unsigned short entrySelector;
     unsigned short rangeShift;
     struct TableEntry entries[1];
-};
+}TableDirectory;
 
 
 unsigned long calcTableCheckSum(unsigned long* data, unsigned long length){
@@ -85,7 +85,7 @@ unsigned long calcTableCheckSum(unsigned long* data, unsigned long length){
     return sum;
 };
 
-struct FontHeader {
+typedef struct FontHeader {
     unsigned int tableVersion;
     unsigned int fontVersion;
     unsigned int checkSumAdjestment;
@@ -105,7 +105,7 @@ struct FontHeader {
     unsigned short fontDirectionHint;
     unsigned short indexToLocationFormat;
     unsigned short glyphDataFormat;
-};
+}FontHeader;
 
 typedef struct {
     unsigned short tableVersion;
@@ -218,11 +218,8 @@ typedef struct {
     unsigned int nonDefaultUVSOffset;
 }VariationSelector;
 
-struct CMAP { };
 
-struct GLFY { };
-
-struct TableMaxp {
+typedef struct{
     unsigned int version;
     unsigned short numGlypha;
     unsigned short maxPoints;
@@ -237,15 +234,110 @@ struct TableMaxp {
     unsigned short maxSizeOfInstructions;
     unsigned short maxComponentElements;
     unsigned short maxComponentDepth;
-};
+}TableMaxp;
 
+typedef struct HorizontalHeader{
+    unsigned int tableVersion;
+    short ascender;
+    short descender;
+    unsigned short advanceWidthMax;
+    short minLeftSideBearing;
+    short minRightSideBearing;
+    short xMaxExtent;
+    short caretSlopeRise;
+    short caretSlopeRun;
+    short caretOffset;
+    short reserved1;
+    short reserved2;
+    short reserved3;
+    short reserved4;
+    short merticDataFormat;
+    unsigned short numberOfHMetrics;
+}HorizontalHeader;
 struct Mmtx { };
 
 struct Loca { };
 
 struct Name { };
 
-struct Hmtx { };
+typedef struct _longHorMetric {
+    unsigned short advanceWidth;
+    short lsb;
+}LongHorMetric;
+typedef struct {
+    LongHorMetric longHorMetric;
+    struct ListNode listNode;
+}LongHorMetricNode;
+
+typedef struct Hmtx {
+    struct ListNode; //List of LongHorMetricNode
+    struct ListNode leftSideBearing; //List of UnsignedShorNode
+}Hmtx;
+
+typedef struct {
+    unsigned int tableVersion;
+    unsigned short numGlyphs;
+}MaxpOlder;
+
+typedef struct{
+    unsigned int tableVersion;
+    unsigned short numGlyphs;
+    unsigned short maxPoints;
+    unsigned short maxContours;
+    unsigned short maxCompositePoints;
+    unsigned short maxCompositeCountours;
+    unsigned short maxZones;
+    unsigned short maxTwillightPoints;
+    unsigned short maxStorage;
+    unsigned short maxFunctionDefs;
+    unsigned short maxInstructionDefs;
+    unsigned short maxStackElements;
+    unsigned short maxSizeOfInstructions;
+    unsigned short maxComponentElements;
+    unsigned short maxComponentDepth;
+}Maxp1;
+
+typedef struct{
+    unsigned short version;
+    short xAvgCharWidth;
+    unsigned short usWeightClass;
+    unsigned short usWidthClass;
+    unsigned short fsType;
+    short ySubscriptXSize;
+    short ySubscriptYSize;
+    short ySubscriptXOffset;
+    short ySubscriptYOffset;
+    short ySuperscriptXSize;
+    short ySuperscriptYSize;
+    short ySuperscriptXOffset;
+    short ySuperscriptYOffset;
+    short yStrikeoutSize;
+    short yStrikeoutPosition;
+    short sFamilyClass;
+    char panose[10];
+    unsigned int ulUnicodeRange1;
+    unsigned int ulUnicodeRange2;
+    unsigned int ulUnicodeRange3;
+    unsigned int ulUnicodeRange4;
+    char achVend[4];
+    unsigned short fsSelection;
+    unsigned short usFirstCharIndex;
+    unsigned short usLastCharIndex;
+    short sTypoAscender;
+    short sTypoDescender;
+    short sTypoLineGap;
+    unsigned short usWinAscent;
+    unsigned short usWinDescent;
+    unsigned int ulCodePageRange1;
+    unsigned int ulCodePageRange2;
+    short sxHeight;
+    short sCapHeight;
+    unsigned short usDefaultChar;
+    unsigned short usBreakChar;
+    unsigned short usMaxContext;
+    unsigned short usLowerOpticalPointSize;
+    unsigned short usUpperOpticalPointSize;
+}OS2;
 
 struct Kerm { };
 

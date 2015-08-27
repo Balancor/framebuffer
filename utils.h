@@ -40,3 +40,14 @@ static inline void removeListNode(struct ListNode* item){
     item->prev->next = item->next;
     item->next->prev = item->prev;
 };
+
+void dump(const char* data, int length){
+    printf("\n");
+    int i = 0;
+    for(i = 0; i < length; i++){
+        printf("%02x", (data[i] & 0xFF));
+        if((i + 1) % 2 == 0) printf(" ");
+        if((i + 1) % 16 == 0)printf("\n");
+    }
+    printf("\n");
+}
