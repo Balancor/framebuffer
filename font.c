@@ -5,36 +5,17 @@
 #include <unistd.h>
 
 #include "font.h"
+#include "dump.h"
 #define MAX_HEADER 512
 
 char *data;
-typedef struct _TableEntryNode{
-    struct TableEntry tableEntry;
-    struct ListNode listNode;
-}TableEntryNode;
-
 
 struct TableDirectory tableDirectory;
 TableEntryNode *tableEntryNode;
 struct ListNode tableEntryList;
 
-typedef struct _CmapSubtableEntryNode {
-    CmapEntry cmapSubtableEntry;
-    struct ListNode listNode;
-    unsigned int offsetToBeginFile;
-}CmapSubtableNode;
-
 CmapSubtableNode *cmapSubtableNode;
 struct ListNode cmapSubtableEntryList;
-
-void dumpTableEntry(struct TableEntry *tableEntry){
-    printf("TableEntry:\n");
-    printf("\t tag: %c%c%c%c\n", tableEntry->tag[0], tableEntry->tag[1],
-                                 tableEntry->tag[2], tableEntry->tag[3]);
-    printf("\t checksum: %u\n", tableEntry->checksum);
-    printf("\t offset: %u\n", tableEntry->offset);
-    printf("\t length: %u\n", tableEntry->length);
-}
 
 void readEntry(const char* data,struct TableEntry *tableEntry, int offset){
     tableEntry->tag[0] = data[offset];
@@ -192,19 +173,26 @@ CmapSubtableNode* getCmapEntry(unsigned short platformId, unsigned short encodin
     return tempCmapSubtableNode;
 }
 
+static inline short
+readShort(const char* contentPtr){
+    short temp  = (contentPtr[0] & 0xFF) << 8 |
+                  (contentPtr[1] & 0xFF);
+    return (temp & 0xFFFF);
+}
+
 static inline unsigned short
 readUnsignedShort(const char* contentPtr){
-    unsigned short temp  = ((*(contentPtr++)) & 0xFF) << 8;
-                   temp |= ((*(contentPtr++)) & 0xFF);
-    return temp;
+    unsigned short temp  = (contentPtr[0] & 0xFF) << 8 |
+                           (contentPtr[1] & 0xFF);
+    return (temp & 0xFFFF);
 }
 static inline unsigned int
 readUnsignedInt(const char* contentPtr){
-    unsigned int temp  = ((*(contentPtr++)) & 0xFF) << 24;
-                 temp |= ((*(contentPtr++)) & 0xFF) << 16;
-                 temp |= ((*(contentPtr++)) & 0xFF) << 8;
-                 temp |= ((*(contentPtr++)) & 0xFF);
-    return temp;
+    unsigned int temp  = (contentPtr[0] & 0xFF) << 24 |
+                         (contentPtr[1] & 0xFF) << 16 |
+                         (contentPtr[2] & 0xFF) << 8  |
+                         (contentPtr[3] & 0xFF);
+    return (temp & 0xFFFFFFFF);
 };
 void readEncodingTable(unsigned short platformId, unsigned short encodingId){
     if(platformId < 0 || encodingId < 0)return;
@@ -214,9 +202,9 @@ void readEncodingTable(unsigned short platformId, unsigned short encodingId){
     unsigned int encodingTableOffset = tempCmapSubtableNode->offsetToBeginFile + tempCmapSubtableNode->cmapSubtableEntry.offset;
     char* encodingTablePtr = data + encodingTableOffset;
     unsigned short format = 0;
-    format  = ((*(encodingTablePtr++)) & 0xFF) << 8;
-    format |= ((*(encodingTablePtr++)) & 0xFF);
-    //printf("format: %u\n", format);
+    format  = (encodingTablePtr[0] & 0xFF) << 8 |
+              (encodingTablePtr[1] & 0xFF);
+    printf("format: %u\n", format);
     switch(format){
         case CMAP_SUBTABLE_FORMAT_BYTE: // 0
             {
@@ -273,47 +261,59 @@ void readEncodingTable(unsigned short platformId, unsigned short encodingId){
                 cmapSegment.segCountX2 = readUnsignedShort(encodingTablePtr + 6);
                 segCount = cmapSegment.segCountX2 >> 1;
                 cmapSegment.searchRange = readUnsignedShort(encodingTablePtr + 8);
-                cmapSegment.rangeShift = readUnsignedShort(encodingTablePtr + 10);
-                cmapSegment.entrySelector = readUnsignedShort(encodingTablePtr + 12);
+                cmapSegment.entrySelector = readUnsignedShort(encodingTablePtr + 10);
+                cmapSegment.rangeShift = readUnsignedShort(encodingTablePtr + 12);
+    printf("CmapSegmentMappingToDelta:\n");
+    printf("\t format: %u\n", cmapSegment.format);
+    printf("\t length: %u\n", cmapSegment.length);
+    printf("\t language: %u\n", cmapSegment.language);
+    printf("\t segCountX2: %u\n", cmapSegment.segCountX2);
+    printf("\t segCount: %u\n", segCount);
+    printf("\t searchRange: %u\n", cmapSegment.searchRange);
+    printf("\t entrySelector: %u\n", cmapSegment.entrySelector);
+    printf("\t rangeShift: %u\n", cmapSegment.rangeShift);
                 int i = 0;
                 int tempOffset = 0;
-                cmapSegment.endCount = (unsigned short*)malloc(sizeof(unsigned short) * segCount);
+                cmapSegment.endCount = (short*)malloc(sizeof(short) * segCount);
                 for(i = 0; i < segCount; i++){
                     tempOffset = 14 + i * 2;
-                    cmapSegment.endCount[i] = readUnsignedShort(encodingTablePtr + tempOffset);
+                    cmapSegment.endCount[i] = readShort(encodingTablePtr + tempOffset);
+                    //printf("endCount[%d]: 0x%04x\n",i, cmapSegment.endCount[i]);
                 }
                 cmapSegment.reservedPad = readUnsignedShort(encodingTablePtr + tempOffset + 2);
 
+    printf("\t reservedPad: %u\n", cmapSegment.reservedPad);
                 tempOffset = tempOffset + 4;
-                cmapSegment.startCount = (unsigned short*)malloc(sizeof(unsigned short) * segCount);
+                cmapSegment.startCount = (short*)malloc(sizeof(short) * segCount);
                 for(i = 0; i < segCount; i++){
                     tempOffset += i * 2;
-                    cmapSegment.startCount[i] = readUnsignedShort(encodingTablePtr + tempOffset);
+                    cmapSegment.startCount[i] = readShort(encodingTablePtr + tempOffset);
                 }
 
                 tempOffset = tempOffset + 2;
-                cmapSegment.idDelta = (unsigned short*)malloc(sizeof(unsigned short) * segCount);
+                cmapSegment.idDelta = (short*)malloc(sizeof(short) * segCount);
                 for(i = 0; i < segCount; i++){
                     tempOffset += i * 2;
-                    cmapSegment.idDelta[i] = readUnsignedShort(encodingTablePtr + tempOffset);
+                    cmapSegment.idDelta[i] = readShort(encodingTablePtr + tempOffset);
                 }
 
                 int j = 0;
                 initListNode(&(cmapSegment.glyphIndexArray));
                 tempOffset = tempOffset + 2;
-                cmapSegment.idRangeOffset = (unsigned short*)malloc(sizeof(unsigned short) * segCount);
+                dump(encodingTablePtr+tempOffset, 512);
+                cmapSegment.idRangeOffset = (short*)malloc(sizeof(short) * segCount);
                 for(i = 0; i < segCount; i++){
                     tempOffset += i * 2;
-                    cmapSegment.idRangeOffset[i] = readUnsignedShort(encodingTablePtr + tempOffset);
-                    if(!(cmapSegment.idRangeOffset[i])){
+                    cmapSegment.idRangeOffset[i] = readShort(encodingTablePtr + tempOffset);
+                    printf("idRangeOffset[%d]: 0x%4.4x\n", i, cmapSegment.idRangeOffset[i]);
+                    if((cmapSegment.idRangeOffset[i])){
                         struct UnsignedShorNode unsignedShortNode;
                         unsignedShortNode.data = readUnsignedShort(encodingTablePtr + tempOffset + 2);
                         tempOffset += 2;
                         addTailListNode(&(cmapSegment.glyphIndexArray), &(unsignedShortNode.listNode));
                     }
                 }
-                printf("CmapSegmentMappingToDelta empty\n");
-
+//                dumpCmapSegmentMappingToDelta(&cmapSegment);
                 free(cmapSegment.endCount);
                 free(cmapSegment.startCount);
                 free(cmapSegment.idDelta);
@@ -335,7 +335,6 @@ void readEncodingTable(unsigned short platformId, unsigned short encodingId){
             }
         case CMAP_SUBTABLE_FORMAT_SEGMENT_COVERAGE: //12
             {
-                dump(encodingTablePtr, 40);
                 CmapSegmentedCoverage cmapSegmentedCoverage;
                 cmapSegmentedCoverage.format = format;
                 cmapSegmentedCoverage.reserved = readUnsignedShort(encodingTablePtr+2);
@@ -367,23 +366,20 @@ int main()
     initFontInfo();
     readCmapSubtables();
 
-    list_for_each(node, &tableEntryList){
-        tempTableEntryNode = listEntry(node, TableEntryNode, listNode);
-        dumpTableEntry(&(tempTableEntryNode->tableEntry));
-    }
-
-//   unsigned short platformId = -1, encodingId = -1;
-//   list_for_each(node, &cmapSubtableEntryList){
-//       tempCmapSubtableNode = listEntry(node, CmapSubtableNode, listNode);
-//       platformId = tempCmapSubtableNode->cmapSubtableEntry.platformId;
-//       encodingId = tempCmapSubtableNode->cmapSubtableEntry.encodingId;
-//       readEncodingTable(platformId, encodingId);
-//
+//   list_for_each(node, &tableEntryList){
+//       tempTableEntryNode = listEntry(node, TableEntryNode, listNode);
+//       dumpTableEntry(&(tempTableEntryNode->tableEntry));
 //   }
+//
+   unsigned short platformId = -1, encodingId = -1;
+   list_for_each(node, &cmapSubtableEntryList){
+       tempCmapSubtableNode = listEntry(node, CmapSubtableNode, listNode);
+       platformId = tempCmapSubtableNode->cmapSubtableEntry.platformId;
+       encodingId = tempCmapSubtableNode->cmapSubtableEntry.encodingId;
+       readEncodingTable(platformId, encodingId);
 
-    int i  = 10;
-//    printf("i++: %d\n", i++);
-//    printf("++i: %d\n", ++i);
+   }
+
     free(cmapSubtableNode);
     free(tableEntryNode);
     free(data);

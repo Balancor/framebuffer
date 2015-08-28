@@ -1,5 +1,8 @@
 #include "utils.h"
 
+#ifndef _FONT_H
+#define _FONT_H
+
 #define DIRECTORY_TAG_CMAP "cmap" //character to glyph mapping
 #define DIRECTORY_TAG_GLFY "glyf" // glyph data
 #define DIRECTORY_TAG_HEAD "head" //font header
@@ -41,10 +44,7 @@
 #define FONT_DIRECTORY  "data"
 #define FONT_FILE "FreeMono.ttf"
 
-struct UnsignedShorNode{
-    unsigned short data;
-    struct ListNode listNode;
-};
+
 
 typedef struct{
         unsigned short firstCode;
@@ -344,3 +344,20 @@ struct Kerm { };
 struct PostScriptInfo { };
 
 struct PCLT { };
+
+typedef struct UnsignedShorNode{
+    unsigned short data;
+    struct ListNode listNode;
+}UnsignedShorNode;
+
+typedef struct _CmapSubtableEntryNode {
+    CmapEntry cmapSubtableEntry;
+    struct ListNode listNode;
+    unsigned int offsetToBeginFile;
+}CmapSubtableNode;
+
+typedef struct _TableEntryNode{
+    struct TableEntry tableEntry;
+    struct ListNode listNode;
+}TableEntryNode;
+#endif
