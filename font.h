@@ -173,7 +173,7 @@ typedef struct {
     unsigned int startCharCode;
     unsigned int endCharCode;
     unsigned int startGlyphId;
-}CmapMixed16Bit32BitGroup;
+}CmapGroup;
 
 typedef struct {
     unsigned short format; //should be 10
