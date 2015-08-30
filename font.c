@@ -26,10 +26,20 @@ MaximumProfile1 *maxProfile1;
 MaximumProfile_5 *maxProfile_5;
 
 OS2 *osTablePtr;
+
+GlyfData* glyfData;
+SimpleGlyphDescription* simpleGlyphDescription;
+CompositeGlyphDescription* compositeGlyphDescription;
 /*
  Global varibal END
  */
 
+char* getTablePtr(int tableTag){
+    tempTableEntry = getTableEntry(tableTag);
+    if(tempTableEntry == NULL) return;
+    char* tablePtr = data + tempTableEntry->offset;
+    return tablePtr;
+}
 
 void readEntry(const char* data,struct TableEntry *tableEntry, int offset){
     tableEntry->tag[0] = data[offset];
@@ -130,11 +140,8 @@ struct TableEntry* getTableEntry(const char* tag){
 }
 
 void readCmapSubtables(){
-    struct TableEntry *tempTableEntry;
-    tempTableEntry = getTableEntry("cmap");
-    if(tempTableEntry == NULL) return;
-    char* tablePtr = data + tempTableEntry->offset;
-    char* endTablePrt = tablePtr + tempTableEntry->length;
+    char* tablePtr = getTablePtr(DIRECTORY_TAG_CMAP);
+    if(NULL == tablePtr) return;
 
     CmapHeader cmapHeader;
     cmapHeader.tableVersion = (tablePtr[0] & 0xFF) << 8 |
@@ -407,11 +414,8 @@ void readEncodingTable(unsigned short platformId, unsigned short encodingId){
 }
 
 void readFontHeaderTable(){
-    struct TableEntry *tempTableEntry;
-    tempTableEntry = getTableEntry(DIRECTORY_TAG_HEAD);
-    if(tempTableEntry == NULL) return;
-    char* tablePtr = data + tempTableEntry->offset;
-    char* endTablePrt = tablePtr + tempTableEntry->length;
+    char* tablePtr = getTablePtr(DIRECTORY_TAG_HEAD);
+    if(NULL == tablePtr) return;
 
     fontHeader->tableVersion = readUnsignedInt(tablePtr);
     fontHeader->fontVersion = readUnsignedInt(tablePtr + 4);
@@ -433,11 +437,8 @@ void readFontHeaderTable(){
 }
 
 void readHorizontalHeader(){
-    struct TableEntry *tempTableEntry;
-    tempTableEntry = getTableEntry(DIRECTORY_TAG_HHEA);
-    if(tempTableEntry == NULL) return;
-    char* tablePtr = data + tempTableEntry->offset;
-    char* endTablePrt = tablePtr + tempTableEntry->length;
+    char* tablePtr = getTablePtr(DIRECTORY_TAG_HHEA);
+    if(NULL == tablePtr) return;
 
     hheader->tableVersion = readUnsignedInt(tablePtr);
     hheader->ascender = readShort(tablePtr + 4);
@@ -457,11 +458,8 @@ void readHorizontalHeader(){
 }
 
 void readMaximumProfile(){
-    struct TableEntry *tempTableEntry;
-    tempTableEntry = getTableEntry(DIRECTORY_TAG_MAXP);
-    if(tempTableEntry == NULL) return;
-    char* tablePtr = data + tempTableEntry->offset;
-    char* endTablePrt = tablePtr + tempTableEntry->length;
+    char* tablePtr = getTablePtr(DIRECTORY_TAG_MAXP);
+    if(NULL == tablePtr) return;
 
     unsigned int version = readUnsignedInt(tablePtr);
     if(TABALE_VERSION_5 == version){
@@ -488,10 +486,8 @@ void readMaximumProfile(){
 };
 
 void readOSTable{
-    tempTableEntry = getTableEntry(DIRECTORY_TAG_OS_2);
-    if(tempTableEntry == NULL) return;
-    char* tablePtr = data + tempTableEntry->offset;
-    char* endTablePrt = tablePtr + tempTableEntry->length;
+    char* tablePtr = getTablePtr(DIRECTORY_TAG_OS_2);
+    if(NULL == tablePtr) return;
 
     osTablePtr->version = readUnsignedShort(tablePtr);
     osTablePtr->xAvgCharWidth = readShort(tablePtr + 2);
@@ -553,6 +549,39 @@ void readOSTable{
     osTablePtr->usMaxContext = readUnsignedShort(tablePtr + 94);
     osTablePtr->usLowerOpticalPointSize = readUnsignedShort(tablePtr + 96);
     osTablePtr->usUpperOpticalPointSize = readUnsignedShort(tablePtr + 98);
+};
+
+void readGlyfData(){
+    char* tablePtr = getTablePtr(DIRECTORY_TAG_GLFY);
+    if(NULL == tablePtr) return;
+
+    glyfData->numberOfContours = readShort(tablePtr);
+    glyfData->xMin = readShort(tablePtr + 2);
+    glyfData->yMin = readShort(tablePtr + 4);
+    glyfData->xMax = readShort(tablePtr + 6);
+    glyfData->yMax = readShort(tablePtr + 8);
+
+    if(glyfData->numberOfContours > 0){
+        int i = 0;
+        int tempOffset = 10;
+        for(i = 0; i < glyfData->numberOfContours; i++){
+            tempOffset += i * 2;
+            simpleGlyphDescription.endPtsOfContours = readUnsignedShort(tablePtr + tempOffset);
+        }
+        tempOffset += 2;
+        simpleGlyphDescrAiption->instructionLength = readUnsignedShort(tablePtr + tempOffset);
+        tempOffset += 2;
+        for(i = 0; i < glyfData->numberOfContours; i++){
+            simpleGlyphDescription.instructions[i] = ((*(tablePtr + tempOffset)) & 0xFF);
+            tempOffset ++;
+        }
+        for(i = 0; i < glyfData->numberOfContours; i++){
+            simpleGlyphDescription.flags[i] = ((*(tablePtr + tempOffset)) & 0xFF);
+            tempOffset ++;
+        }
+    } else if(glyfData->numberOfContours <= 0){
+    }
+
 };
 
 int main()

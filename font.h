@@ -29,6 +29,25 @@
 #define DIRECTORY_TAG_VHEA "vhea" //Vertical Metrics header
 #define DIRECTORY_TAG_VMTX "vmtx" //Vertical Metrics
 
+/* Glyph flags  START
+ */
+#define ARG_1_AND_2_ARE_WORDS 0
+#define ARGS_ARE_XY_VALUES 1
+#define ROUND_XY_TO_GRID 2
+#define WE_HAVE_A_SCALE 3
+#define RESERVED 4
+#define MORE_COMPONENTS 5
+#define WE_HAVE_AN_X_AND_Y_SCALE 6
+#define WE_HAVE_A_TWO_BY_TWO 7
+#define WE_HAVE_INSTRUCTIONS 8
+#define USE_MY_METRICS 9
+#define OVERLAP_COMPOUND 10
+#define SCALED_COMPONENT_OFFSET 11
+#define UNSCALED_COMPONENT_OFFSET 12
+/* Glyph flags  END
+ */
+
+
 #define CMAP_SUBTABLE_FORMAT_BYTE 0
 #define CMAP_SUBTABLE_FORMAT_HIGH_BYTE 2
 #define CMAP_SUBTABLE_FORMAT_SEGMENT 4
@@ -361,4 +380,32 @@ typedef struct _TableEntryNode{
     struct TableEntry tableEntry;
     struct ListNode listNode;
 }TableEntryNode;
+
+typedef struct {
+    short numberOfContours;
+    short xMin;
+    short yMin;
+    short xMax;
+    short yMax;
+}GlyfData;
+
+typedef struct{
+    unsigned short* endPtsOfContours;
+    unsigned short instructionLength;
+    char* instructions;
+    char* flags;
+    short* xCoordinates;
+    short* yCoordinates;
+}SimpleGlyphDescription;
+
+typedef struct{
+    unsigned short flags;
+    unsigned short glyphIndex;
+    /* the type of arguments is unknown.
+       so, JUST assume the type as short
+     */
+    short argument1;
+    short argument2;
+}CompositeGlyphDescription;
+
 #endif
