@@ -8,14 +8,28 @@
 #include "dump.h"
 #define MAX_HEADER 512
 
+/*
+ Global varibal START
+ */
 char *data;
-
 struct TableDirectory tableDirectory;
 TableEntryNode *tableEntryNode;
 struct ListNode tableEntryList;
 
 CmapSubtableNode *cmapSubtableNode;
 struct ListNode cmapSubtableEntryList;
+
+HorizontalHeader *hheader;
+FontHeader *fontHeader;
+
+MaximumProfile1 *maxProfile1;
+MaximumProfile_5 *maxProfile_5;
+
+OS2 *osTablePtr;
+/*
+ Global varibal END
+ */
+
 
 void readEntry(const char* data,struct TableEntry *tableEntry, int offset){
     tableEntry->tag[0] = data[offset];
@@ -392,6 +406,155 @@ void readEncodingTable(unsigned short platformId, unsigned short encodingId){
     }
 }
 
+void readFontHeaderTable(){
+    struct TableEntry *tempTableEntry;
+    tempTableEntry = getTableEntry(DIRECTORY_TAG_HEAD);
+    if(tempTableEntry == NULL) return;
+    char* tablePtr = data + tempTableEntry->offset;
+    char* endTablePrt = tablePtr + tempTableEntry->length;
+
+    fontHeader->tableVersion = readUnsignedInt(tablePtr);
+    fontHeader->fontVersion = readUnsignedInt(tablePtr + 4);
+    fontHeader->checkSumAdjestment = readUnsignedInt(tablePtr + 8);
+    fontHeader->magicNumber = readUnsignedInt(tablePtr + 12);
+    fontHeader->flags = readUnsignedShort(tablePtr + 16);
+    fontHeader->unitsPerEm = readUnsignedShort(tablePtr + 18);
+    fontHeader->created = readUnsignedShort(tablePtr + 20);
+    fontHeader->modified = readUnsignedShort(tablePtr + 21);
+    fontHeader->xMin = readShort(tablePtr + 22);
+    fontHeader->yMin = readShort(tablePtr + 24);
+    fontHeader->xMax = readShort(tablePtr + 26);
+    fontHeader->yMax = readShort(tablePtr + 28);
+    fontHeader->macStyle = readUnsignedShort(tablePtr +30);
+    fontHeader->lowestRecPPEM = readUnsignedShort(tablePtr +32);
+    fontHeader->fontDirectionHint = readUnsignedShort(tablePtr +34);
+    fontHeader->indexToLocationFormat = readUnsignedShort(tablePtr +36);
+    fontHeader->glyphDataFormat = readUnsignedShort(tablePtr +38);
+}
+
+void readHorizontalHeader(){
+    struct TableEntry *tempTableEntry;
+    tempTableEntry = getTableEntry(DIRECTORY_TAG_HHEA);
+    if(tempTableEntry == NULL) return;
+    char* tablePtr = data + tempTableEntry->offset;
+    char* endTablePrt = tablePtr + tempTableEntry->length;
+
+    hheader->tableVersion = readUnsignedInt(tablePtr);
+    hheader->ascender = readShort(tablePtr + 4);
+    hheader->descender = readShort(tablePtr + 6);
+    hheader->advanceWidthMax = readUnsignedShort(tablePtr + 8);
+    hheader->minLeftSideBearing = readShort(tablePtr + 10);
+    hheader->minRightSideBearing = readShort(tablePtr + 12);
+    hheader->xMaxExtent = readShort(tablePtr + 14);
+    hheader->caretSlopeRise = readShort(tablePtr + 16);
+    hheader->caretSlopeRun = readShort(tablePtr + 18);
+    hheader->reserved1 = readShort(tablePtr + 20);
+    hheader->reserved2 = readShort(tablePtr + 22);
+    hheader->reserved3 = readShort(tablePtr + 24);
+    hheader->reserved4 = readShort(tablePtr + 26);
+    hheader->merticDataFormat = readShort(tablePtr + 28);
+    hheader->numberOfHMetrics = readShort(tablePtr + 30);
+}
+
+void readMaximumProfile(){
+    struct TableEntry *tempTableEntry;
+    tempTableEntry = getTableEntry(DIRECTORY_TAG_MAXP);
+    if(tempTableEntry == NULL) return;
+    char* tablePtr = data + tempTableEntry->offset;
+    char* endTablePrt = tablePtr + tempTableEntry->length;
+
+    unsigned int version = readUnsignedInt(tablePtr);
+    if(TABALE_VERSION_5 == version){
+        maxProfile_5.version = version;
+        maxProfile_5.numGlypha = readUnsignedShort(tablePtr + 4);
+    } else if(TABALE_VERSION1 == version){
+        maxProfile1.version = version;
+        maxProfile1.numGlypha = readUnsignedShort(tablePtr + 4);
+        maxProfile1.maxPoints = readUnsignedShort(tablePtr + 6);
+        maxProfile1.maxContours = readUnsignedShort(tablePtr + 8);
+        maxProfile1.maxCompositePoints = readUnsignedShort(tablePtr + 10);
+        maxProfile1.maxCompositeContours = readUnsignedShort(tablePtr + 12);
+        maxProfile1.maxZones = readUnsignedShort(tablePtr + 14);
+        maxProfile1.maxTwilightPoints = readUnsignedShort(tablePtr + 16);
+        maxProfile1.maxStorage = readUnsignedShort(tablePtr + 18);
+        maxProfile1.maxFunctionDefs = readUnsignedShort(tablePtr + 20);
+        maxProfile1.maxStackElements = readUnsignedShort(tablePtr + 22);
+        maxProfile1.maxSizeOfInstructions = readUnsignedShort(tablePtr + 24);
+        maxProfile1.maxComponentElements = readUnsignedShort(tablePtr + 26);
+        maxProfile1.maxComponentDepth = readUnsignedShort(tablePtr + 28);
+    } else {
+        printf("Error: Cannot get version\n");
+    }
+};
+
+void readOSTable{
+    tempTableEntry = getTableEntry(DIRECTORY_TAG_OS_2);
+    if(tempTableEntry == NULL) return;
+    char* tablePtr = data + tempTableEntry->offset;
+    char* endTablePrt = tablePtr + tempTableEntry->length;
+
+    osTablePtr->version = readUnsignedShort(tablePtr);
+    osTablePtr->xAvgCharWidth = readShort(tablePtr + 2);
+    osTablePtr->usWeightClass = readUnsignedShort(tablePtr + 4);
+    osTablePtr->usWidthClass = readUnsignedShort(tablePtr + 6);
+    osTablePtr->fsType = readUnsignedShort(tablePtr + 8);
+
+    osTablePtr->ySubscriptXSize = readShort(tablePtr + 10);
+    osTablePtr->ySubscriptYSize = readShort(tablePtr + 12);
+    osTablePtr->ySubscriptXOffset = readShort(tablePtr + 14);
+    osTablePtr->ySubscriptYOffset = readShort(tablePtr + 16);
+    osTablePtr->ySuperscriptXSize = readShort(tablePtr + 18);
+    osTablePtr->ySuperscriptYSize = readShort(tablePtr + 20);
+    osTablePtr->ySuperscriptXOffset = readShort(tablePtr + 22);
+    osTablePtr->ySuperscriptYOffset = readShort(tablePtr + 24);
+    osTablePtr->yStrikeoutSize = readShort(tablePtr + 26);
+    osTablePtr->yStrikeoutPosition = readShort(tablePtr + 28);
+    osTablePtr->sFamilyClass = readShort(tablePtr + 30);
+
+    int tempOffset = 32;
+    int i = 0;
+    for(i = 0; i < 10; i++){
+        osTablePtr->panose[i] = ((*(tablePtr + offset)) & 0xFF);
+        tempOffset++;
+    } 
+    osTablePtr->panose[0] = ((*(tablePtr + 32)) & 0xFF);
+    osTablePtr->panose[1] = ((*(tablePtr + 33)) & 0xFF);
+    osTablePtr->panose[2] = ((*(tablePtr + 34)) & 0xFF);
+    osTablePtr->panose[3] = ((*(tablePtr + 35)) & 0xFF);
+    osTablePtr->panose[4] = ((*(tablePtr + 36)) & 0xFF);
+    osTablePtr->panose[5] = ((*(tablePtr + 37)) & 0xFF);
+    osTablePtr->panose[6] = ((*(tablePtr + 38)) & 0xFF);
+    osTablePtr->panose[7] = ((*(tablePtr + 39)) & 0xFF);
+    osTablePtr->panose[8] = ((*(tablePtr + 40)) & 0xFF);
+    osTablePtr->panose[9] = ((*(tablePtr + 41)) & 0xFF);
+
+    osTablePtr->ulUnicodeRange1 = readUnsignedInt(tablePtr + 42);
+    osTablePtr->ulUnicodeRange2 = readUnsignedInt(tablePtr + 46);
+    osTablePtr->ulUnicodeRange3 = readUnsignedInt(tablePtr + 50);
+    osTablePtr->ulUnicodeRange4 = readUnsignedInt(tablePtr + 54);
+    osTablePtr->achVend[0] = ((*(tablePtr + 58)) & 0xFF);
+    osTablePtr->achVend[1] = ((*(tablePtr + 59)) & 0xFF);
+    osTablePtr->achVend[2] = ((*(tablePtr + 60)) & 0xFF);
+    osTablePtr->achVend[3] = ((*(tablePtr + 61)) & 0xFF);
+    osTablePtr->fsSelection = readUnsignedShort(tablePtr + 62);
+    osTablePtr->usFirstCharIndex = readUnsignedShort(tablePtr + 64);;
+    osTablePtr->usLastCharIndex = readUnsignedShort(tablePtr + 66);
+    OsTablePtr->sTypoAscender = readShort(tablePtr + 68);
+    OsTablePtr->sTypoDescender = readShort(tablePtr + 70);
+    OsTablePtr->sTypoLineGap = readShort(tablePtr + 72);
+    osTablePtr->usWinAscent = readUnsignedShort(tablePtr + 74);
+    osTablePtr->usWinDescent = readUnsignedShort(tablePtr + 76);
+    osTablePtr->ulCodePageRange1 = readUnsignedInt(tablePtr + 78);
+    osTablePtr->ulCodePageRange2 = readUnsignedInt(tablePtr + 82);
+    osTablePtr->sxHeight = readShort(tablePtr + 86);
+    osTablePtr->sCapHeight = readShort(tablePtr + 88);
+    osTablePtr->usDefaultChar = readUnsignedShort(tablePtr + 90);
+    osTablePtr->usBreakChar = readUnsignedShort(tablePtr + 92);
+    osTablePtr->usMaxContext = readUnsignedShort(tablePtr + 94);
+    osTablePtr->usLowerOpticalPointSize = readUnsignedShort(tablePtr + 96);
+    osTablePtr->usUpperOpticalPointSize = readUnsignedShort(tablePtr + 98);
+};
+
 int main()
 {
     TableEntryNode *tempTableEntryNode;
@@ -400,19 +563,19 @@ int main()
     initFontInfo();
     readCmapSubtables();
 
-//   list_for_each(node, &tableEntryList){
-//       tempTableEntryNode = listEntry(node, TableEntryNode, listNode);
-//       dumpTableEntry(&(tempTableEntryNode->tableEntry));
-//   }
-//
-   unsigned short platformId = -1, encodingId = -1;
-   list_for_each(node, &cmapSubtableEntryList){
-       tempCmapSubtableNode = listEntry(node, CmapSubtableNode, listNode);
-       platformId = tempCmapSubtableNode->cmapSubtableEntry.platformId;
-       encodingId = tempCmapSubtableNode->cmapSubtableEntry.encodingId;
-       readEncodingTable(platformId, encodingId);
-
+   list_for_each(node, &tableEntryList){
+       tempTableEntryNode = listEntry(node, TableEntryNode, listNode);
+       dumpTableEntry(&(tempTableEntryNode->tableEntry));
    }
+//
+//  unsigned short platformId = -1, encodingId = -1;
+//  list_for_each(node, &cmapSubtableEntryList){
+//      tempCmapSubtableNode = listEntry(node, CmapSubtableNode, listNode);
+//      platformId = tempCmapSubtableNode->cmapSubtableEntry.platformId;
+//      encodingId = tempCmapSubtableNode->cmapSubtableEntry.encodingId;
+//      readEncodingTable(platformId, encodingId);
+//
+//  }
 
     free(cmapSubtableNode);
     free(tableEntryNode);

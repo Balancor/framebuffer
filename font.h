@@ -39,6 +39,9 @@
 #define CMAP_SUBTABLE_FORMAT_MANY_TO_ONE 13
 #define CMAP_SUBTABLE_FORMAT_UNICODE 14
 
+#define TABALE_VERSION_5 0x00005000
+#define TABALE_VERSION1  0x00010000
+
 #define MAX_SIZE 256
 
 #define FONT_DIRECTORY  "data"
@@ -218,6 +221,10 @@ typedef struct {
     unsigned int nonDefaultUVSOffset;
 }VariationSelector;
 
+typedef struct{
+    unsigned int version;
+    unsigned short numGlypha;
+}MaximumProfile_5;
 
 typedef struct{
     unsigned int version;
@@ -234,9 +241,9 @@ typedef struct{
     unsigned short maxSizeOfInstructions;
     unsigned short maxComponentElements;
     unsigned short maxComponentDepth;
-}TableMaxp;
+}MaximumProfile1;
 
-typedef struct HorizontalHeader{
+typedef struct _HorizontalHeader{
     unsigned int tableVersion;
     short ascender;
     short descender;
@@ -270,7 +277,7 @@ typedef struct {
 }LongHorMetricNode;
 
 typedef struct Hmtx {
-    struct ListNode; //List of LongHorMetricNode
+    struct ListNode longHorMetric; //List of LongHorMetricNode
     struct ListNode leftSideBearing; //List of UnsignedShorNode
 }Hmtx;
 
@@ -338,12 +345,6 @@ typedef struct{
     unsigned short usLowerOpticalPointSize;
     unsigned short usUpperOpticalPointSize;
 }OS2;
-
-struct Kerm { };
-
-struct PostScriptInfo { };
-
-struct PCLT { };
 
 typedef struct UnsignedShorNode{
     unsigned short data;
