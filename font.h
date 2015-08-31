@@ -31,23 +31,38 @@
 
 /* Glyph flags  START
  */
-#define ARG_1_AND_2_ARE_WORDS 0
-#define ARGS_ARE_XY_VALUES 1
-#define ROUND_XY_TO_GRID 2
-#define WE_HAVE_A_SCALE 3
-#define RESERVED 4
-#define MORE_COMPONENTS 5
-#define WE_HAVE_AN_X_AND_Y_SCALE 6
-#define WE_HAVE_A_TWO_BY_TWO 7
-#define WE_HAVE_INSTRUCTIONS 8
-#define USE_MY_METRICS 9
-#define OVERLAP_COMPOUND 10
-#define SCALED_COMPONENT_OFFSET 11
-#define UNSCALED_COMPONENT_OFFSET 12
+#define ARG_1_AND_2_ARE_WORDS 1 << 0
+#define ARGS_ARE_XY_VALUES 1 << 1
+#define ROUND_XY_TO_GRID 1 << 2
+#define WE_HAVE_A_SCALE 1 << 3
+#define RESERVED  1 << 4
+#define MORE_COMPONENTS 1 << 5
+#define WE_HAVE_AN_X_AND_Y_SCALE 1 << 6
+#define WE_HAVE_A_TWO_BY_TWO 1 << 7
+#define WE_HAVE_INSTRUCTIONS 1 << 8
+#define USE_MY_METRICS 1 << 9
+#define OVERLAP_COMPOUND 1 << 10
+#define SCALED_COMPONENT_OFFSET 1 << 11
+#define UNSCALED_COMPONENT_OFFSET 1 << 12
 /* Glyph flags  END
  */
 
-
+/*
+ *Glyph Data Simple Glyph Description Flags
+ START
+ * */
+#define SIMPLE_GLYPH_FLAG_ON_CURVE 1 << 0
+#define SIMPLE_GLYPH_FLAG_X_SHORT_VECTOR 1 << 1
+#define SIMPLE_GLYPH_FLAG_Y_SHORT_VECTOR 1 << 2
+#define SIMPLE_GLYPH_FLAG_REPEAT 1 << 3
+#define SIMPLE_GLYPH_FLAG_X_SAME 1 << 4
+#define SIMPLE_GLYPH_FLAG_Y_SAME 1 << 5
+#define SIMPLE_GLYPH_FLAG_RESERVED1 1 << 6
+#define SIMPLE_GLYPH_FLAG_RESERVED2 1 << 7
+/*
+ *Glyph Data Simple Glyph Description Flags
+ END
+ * */
 #define CMAP_SUBTABLE_FORMAT_BYTE 0
 #define CMAP_SUBTABLE_FORMAT_HIGH_BYTE 2
 #define CMAP_SUBTABLE_FORMAT_SEGMENT 4
@@ -394,8 +409,16 @@ typedef struct{
     unsigned short instructionLength;
     char* instructions;
     char* flags;
-    short* xCoordinates;
-    short* yCoordinates;
+    union{
+        char xCoorByte;
+        short xCoorShort
+    }xCoordinates;
+
+    union{
+        char yCoorByte;
+        short yCoorShort
+    }yCoordinates;
+
 }SimpleGlyphDescription;
 
 typedef struct{

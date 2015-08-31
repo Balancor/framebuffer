@@ -18,24 +18,26 @@ struct ListNode tableEntryList;
 
 CmapSubtableNode *cmapSubtableNode;
 struct ListNode cmapSubtableEntryList;
-
-HorizontalHeader *hheader;
-FontHeader *fontHeader;
-
-MaximumProfile1 *maxProfile1;
-MaximumProfile_5 *maxProfile_5;
-
-OS2 *osTablePtr;
-
-GlyfData* glyfData;
-SimpleGlyphDescription* simpleGlyphDescription;
-CompositeGlyphDescription* compositeGlyphDescription;
 /*
  Global varibal END
  */
 
+struct TableEntry* getTableEntry(const char* tag){
+    TableEntryNode *tempTableEntryNode = 0;
+    struct ListNode *node;
+    int found = 0;
+    list_for_each(node, &tableEntryList){
+        tempTableEntryNode = listEntry(node, TableEntryNode, listNode);
+        if(!strncmp(tempTableEntryNode->tableEntry.tag, tag, 4)){
+            found = 1;
+            break;
+        }
+    }
+    if(found) return &(tempTableEntryNode->tableEntry);
+}
+
 char* getTablePtr(int tableTag){
-    tempTableEntry = getTableEntry(tableTag);
+    TableEntry* tempTableEntry = getTableEntry(tableTag);
     if(tempTableEntry == NULL) return;
     char* tablePtr = data + tempTableEntry->offset;
     return tablePtr;
@@ -125,34 +127,21 @@ int initFontInfo(){
     close(fd);
 }
 
-struct TableEntry* getTableEntry(const char* tag){
-    TableEntryNode *tempTableEntryNode = 0;
-    struct ListNode *node;
-    int found = 0;
-    list_for_each(node, &tableEntryList){
-        tempTableEntryNode = listEntry(node, TableEntryNode, listNode);
-        if(!strncmp(tempTableEntryNode->tableEntry.tag, tag, 4)){
-            found = 1;
-            break;
-        }
-    }
-    if(found) return &(tempTableEntryNode->tableEntry);
-}
 
-void readCmapSubtables(){
-    char* tablePtr = getTablePtr(DIRECTORY_TAG_CMAP);
-    if(NULL == tablePtr) return;
+void readCmapSubtables(CmapHeader* cmapHeader){
+    TableEntry* tempTableEntry = getTableEntry(DIRECTORY_TAG_CMAP);
+    if(tempTableEntry == NULL) return;
+    char* tablePtr = data + tempTableEntry->offset;
 
-    CmapHeader cmapHeader;
-    cmapHeader.tableVersion = (tablePtr[0] & 0xFF) << 8 |
+    cmapHeader->tableVersion = (tablePtr[0] & 0xFF) << 8 |
                               (tablePtr[1] & 0xFF);
-    cmapHeader.numOfTable =   (tablePtr[2] & 0xFF) << 8 |
+    cmapHeader->numOfTable =   (tablePtr[2] & 0xFF) << 8 |
                               (tablePtr[3] & 0xFF);
 
     initListNode(&cmapSubtableEntryList);
     int subTableLength = sizeof(CmapEntry);
 
-    cmapSubtableNode = (CmapSubtableNode *)malloc(sizeof(CmapSubtableNode) * cmapHeader.numOfTable);
+    cmapSubtableNode = (CmapSubtableNode *)malloc(sizeof(CmapSubtableNode) * cmapHeader->numOfTable);
 
     if(!cmapSubtableNode){
         printf("Error: Cannot get enough memory!\n");
@@ -161,7 +150,7 @@ void readCmapSubtables(){
     int i = 0;
     CmapEntry cmapEntry;
     char* subTableEntryPtr = tablePtr + 4;
-    for (i = 0; i < cmapHeader.numOfTable; i++){
+    for (i = 0; i < cmapHeader->numOfTable; i++){
         cmapSubtableNode[i].offsetToBeginFile = tempTableEntry->offset;
         cmapSubtableNode[i].cmapSubtableEntry.platformId =
                                          (subTableEntryPtr[subTableLength * i] & 0xFF) << 8 |
@@ -413,7 +402,7 @@ void readEncodingTable(unsigned short platformId, unsigned short encodingId){
     }
 }
 
-void readFontHeaderTable(){
+void readFontHeaderTable(FontHeader* fontHeader){
     char* tablePtr = getTablePtr(DIRECTORY_TAG_HEAD);
     if(NULL == tablePtr) return;
 
@@ -436,7 +425,7 @@ void readFontHeaderTable(){
     fontHeader->glyphDataFormat = readUnsignedShort(tablePtr +38);
 }
 
-void readHorizontalHeader(){
+void readHorizontalHeader(HorizontalHeader* hheader){
     char* tablePtr = getTablePtr(DIRECTORY_TAG_HHEA);
     if(NULL == tablePtr) return;
 
@@ -457,35 +446,36 @@ void readHorizontalHeader(){
     hheader->numberOfHMetrics = readShort(tablePtr + 30);
 }
 
-void readMaximumProfile(){
+void readMaximumProfile(MaximumProfile_5* maxProfile_5,
+        MaximumProfile1* maxProfile1){
     char* tablePtr = getTablePtr(DIRECTORY_TAG_MAXP);
     if(NULL == tablePtr) return;
 
     unsigned int version = readUnsignedInt(tablePtr);
     if(TABALE_VERSION_5 == version){
-        maxProfile_5.version = version;
-        maxProfile_5.numGlypha = readUnsignedShort(tablePtr + 4);
+        maxProfile_5->version = version;
+        maxProfile_5->numGlypha = readUnsignedShort(tablePtr + 4);
     } else if(TABALE_VERSION1 == version){
-        maxProfile1.version = version;
-        maxProfile1.numGlypha = readUnsignedShort(tablePtr + 4);
-        maxProfile1.maxPoints = readUnsignedShort(tablePtr + 6);
-        maxProfile1.maxContours = readUnsignedShort(tablePtr + 8);
-        maxProfile1.maxCompositePoints = readUnsignedShort(tablePtr + 10);
-        maxProfile1.maxCompositeContours = readUnsignedShort(tablePtr + 12);
-        maxProfile1.maxZones = readUnsignedShort(tablePtr + 14);
-        maxProfile1.maxTwilightPoints = readUnsignedShort(tablePtr + 16);
-        maxProfile1.maxStorage = readUnsignedShort(tablePtr + 18);
-        maxProfile1.maxFunctionDefs = readUnsignedShort(tablePtr + 20);
-        maxProfile1.maxStackElements = readUnsignedShort(tablePtr + 22);
-        maxProfile1.maxSizeOfInstructions = readUnsignedShort(tablePtr + 24);
-        maxProfile1.maxComponentElements = readUnsignedShort(tablePtr + 26);
-        maxProfile1.maxComponentDepth = readUnsignedShort(tablePtr + 28);
+        maxProfile1->version = version;
+        maxProfile1->numGlypha = readUnsignedShort(tablePtr + 4);
+        maxProfile1->maxPoints = readUnsignedShort(tablePtr + 6);
+        maxProfile1->maxContours = readUnsignedShort(tablePtr + 8);
+        maxProfile1->maxCompositePoints = readUnsignedShort(tablePtr + 10);
+        maxProfile1->maxCompositeContours = readUnsignedShort(tablePtr + 12);
+        maxProfile1->maxZones = readUnsignedShort(tablePtr + 14);
+        maxProfile1->maxTwilightPoints = readUnsignedShort(tablePtr + 16);
+        maxProfile1->maxStorage = readUnsignedShort(tablePtr + 18);
+        maxProfile1->maxFunctionDefs = readUnsignedShort(tablePtr + 20);
+        maxProfile1->maxStackElements = readUnsignedShort(tablePtr + 22);
+        maxProfile1->maxSizeOfInstructions = readUnsignedShort(tablePtr + 24);
+        maxProfile1->maxComponentElements = readUnsignedShort(tablePtr + 26);
+        maxProfile1->maxComponentDepth = readUnsignedShort(tablePtr + 28);
     } else {
         printf("Error: Cannot get version\n");
     }
 };
 
-void readOSTable{
+void readOSTable(OS2* osTablePtr) {
     char* tablePtr = getTablePtr(DIRECTORY_TAG_OS_2);
     if(NULL == tablePtr) return;
 
@@ -510,9 +500,9 @@ void readOSTable{
     int tempOffset = 32;
     int i = 0;
     for(i = 0; i < 10; i++){
-        osTablePtr->panose[i] = ((*(tablePtr + offset)) & 0xFF);
+        osTablePtr->panose[i] = ((*(tablePtr + tempOffset)) & 0xFF);
         tempOffset++;
-    } 
+    }
     osTablePtr->panose[0] = ((*(tablePtr + 32)) & 0xFF);
     osTablePtr->panose[1] = ((*(tablePtr + 33)) & 0xFF);
     osTablePtr->panose[2] = ((*(tablePtr + 34)) & 0xFF);
@@ -535,9 +525,9 @@ void readOSTable{
     osTablePtr->fsSelection = readUnsignedShort(tablePtr + 62);
     osTablePtr->usFirstCharIndex = readUnsignedShort(tablePtr + 64);;
     osTablePtr->usLastCharIndex = readUnsignedShort(tablePtr + 66);
-    OsTablePtr->sTypoAscender = readShort(tablePtr + 68);
-    OsTablePtr->sTypoDescender = readShort(tablePtr + 70);
-    OsTablePtr->sTypoLineGap = readShort(tablePtr + 72);
+    osTablePtr->sTypoAscender = readShort(tablePtr + 68);
+    osTablePtr->sTypoDescender = readShort(tablePtr + 70);
+    osTablePtr->sTypoLineGap = readShort(tablePtr + 72);
     osTablePtr->usWinAscent = readUnsignedShort(tablePtr + 74);
     osTablePtr->usWinDescent = readUnsignedShort(tablePtr + 76);
     osTablePtr->ulCodePageRange1 = readUnsignedInt(tablePtr + 78);
@@ -551,7 +541,9 @@ void readOSTable{
     osTablePtr->usUpperOpticalPointSize = readUnsignedShort(tablePtr + 98);
 };
 
-void readGlyfData(){
+void readGlyfData(GlyfData* glyfData,
+        SimpleGlyphDescription* simpleGlyphDescription,
+        CompositeGlyphDescription* compositeGlyphDescription){
     char* tablePtr = getTablePtr(DIRECTORY_TAG_GLFY);
     if(NULL == tablePtr) return;
 
@@ -562,24 +554,49 @@ void readGlyfData(){
     glyfData->yMax = readShort(tablePtr + 8);
 
     if(glyfData->numberOfContours > 0){
+        /*Simple GlyphDescription*/
         int i = 0;
         int tempOffset = 10;
         for(i = 0; i < glyfData->numberOfContours; i++){
-            tempOffset += i * 2;
-            simpleGlyphDescription.endPtsOfContours = readUnsignedShort(tablePtr + tempOffset);
+            simpleGlyphDescription->endPtsOfContours = readUnsignedShort(tablePtr + tempOffset);
+            tempOffset += 2;
         }
-        tempOffset += 2;
-        simpleGlyphDescrAiption->instructionLength = readUnsignedShort(tablePtr + tempOffset);
+
+        simpleGlyphDescription->instructionLength = readUnsignedShort(tablePtr + tempOffset);
         tempOffset += 2;
         for(i = 0; i < glyfData->numberOfContours; i++){
-            simpleGlyphDescription.instructions[i] = ((*(tablePtr + tempOffset)) & 0xFF);
+            simpleGlyphDescription->instructions[i] = ((*(tablePtr + tempOffset)) & 0xFF);
             tempOffset ++;
         }
+
         for(i = 0; i < glyfData->numberOfContours; i++){
-            simpleGlyphDescription.flags[i] = ((*(tablePtr + tempOffset)) & 0xFF);
+            simpleGlyphDescription->flags[i] = ((*(tablePtr + tempOffset)) & 0xFF);
             tempOffset ++;
+        }
+
+        for(i = 0; i < glyfData->numberOfContours; i++){
+            if(simpleGlyphDescription->flags[i]){
+                simpleGlyphDescription->xCoordinates.xCoorByte = ((*(tablePtr + tempOffset)) & 0xFF);
+                tempOffset ++;
+            } else {
+                simpleGlyphDescription->xCoordinates.xCoorShort = readUnsignedShort(tablePtr + tempOffset);
+                tempOffset += 2;
+            }
+        }
+
+        for(i = 0; i < glyfData->numberOfContours; i++){
+            if(simpleGlyphDescription->flags[i]){
+                simpleGlyphDescription->yCoordinates.yCoorByte = ((*(tablePtr + tempOffset)) & 0xFF);
+                tempOffset ++;
+            } else {
+                simpleGlyphDescription->yCoordinates.yCoorShort = readUnsignedShort(tablePtr + tempOffset);
+                tempOffset += 2;
+            }
         }
     } else if(glyfData->numberOfContours <= 0){
+        /*
+         * PASS
+         * */
     }
 
 };
@@ -590,7 +607,8 @@ int main()
     CmapSubtableNode *tempCmapSubtableNode;
     struct ListNode *node;
     initFontInfo();
-    readCmapSubtables();
+    CmapHeader cmapHeader;
+    readCmapSubtables(&cmapHeader);
 
    list_for_each(node, &tableEntryList){
        tempTableEntryNode = listEntry(node, TableEntryNode, listNode);
