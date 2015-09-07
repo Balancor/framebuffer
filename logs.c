@@ -21,7 +21,12 @@ void log_set_level(int level){
 
 void log_init(){
     int fd = -1;
-    fd = open(LOG_FILE,O_RDWR | O_CREAT, 0666);
+    if(access(LOG_DIRE, F_OK) < 0){
+        if(mkdir(LOG_DIRE, 0777) < 0){
+            printf("Error: Cannot creat the directory\n");
+        }
+    }
+    fd = open(LOG_DIRE "/" LOG_FILE,O_RDWR | O_CREAT, 0666);
     if(fd <= 0){
         printf("Cannot open the log file\n ");
     }

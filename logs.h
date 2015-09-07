@@ -1,8 +1,8 @@
 #include <sys/cdefs.h>
 #include <stdarg.h>
 
-
-#define LOG_FILE "logs/running.log"
+#define LOG_DIRE "logs"
+#define LOG_FILE "running.log"
 
 struct log_info{
     int logFd;

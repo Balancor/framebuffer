@@ -610,19 +610,20 @@ int main()
     CmapHeader cmapHeader;
     readCmapSubtables(&cmapHeader);
 
-   list_for_each(node, &tableEntryList){
-       tempTableEntryNode = listEntry(node, TableEntryNode, listNode);
-       dumpTableEntry(&(tempTableEntryNode->tableEntry));
-   }
-//
-//  unsigned short platformId = -1, encodingId = -1;
-//  list_for_each(node, &cmapSubtableEntryList){
-//      tempCmapSubtableNode = listEntry(node, CmapSubtableNode, listNode);
-//      platformId = tempCmapSubtableNode->cmapSubtableEntry.platformId;
-//      encodingId = tempCmapSubtableNode->cmapSubtableEntry.encodingId;
-//      readEncodingTable(platformId, encodingId);
-//
+//  list_for_each(node, &tableEntryList){
+//      tempTableEntryNode = listEntry(node, TableEntryNode, listNode);
+//      dumpTableEntry(&(tempTableEntryNode->tableEntry));
 //  }
+//
+  unsigned short platformId = -1, encodingId = -1;
+  list_for_each(node, &cmapSubtableEntryList){
+      tempCmapSubtableNode = listEntry(node, CmapSubtableNode, listNode);
+      platformId = tempCmapSubtableNode->cmapSubtableEntry.platformId;
+      encodingId = tempCmapSubtableNode->cmapSubtableEntry.encodingId;
+      printf("platformId: %d, encodingId: %d\n", platformId, encodingId);
+      readEncodingTable(platformId, encodingId);
+
+  }
 
     free(cmapSubtableNode);
     free(tableEntryNode);

@@ -6,60 +6,11 @@
 #include <sys/mman.h>
 #include <linux/fb.h>
 #include <sys/ioctl.h>
-
+#include "shape.h"
 #include "logs.h"
-#define FRAMEBUFFER_DEVICE "/dev/fb0"
 
-#define MAX_COLOR_RGB565  2<<15
-#define MAX_COLOR_RGB888  2<<23
-#define MAX_COLOR_RGBA    2<<31
-
-#define RGBA(r, g, b, a) ((r<<24) | (g<<16) | (b<<8) |(a))
-#define RGB888(r,g,b) ((r<<16) | (g<<8) |(b))
-#define RGB565(r,g,b) ((r<<11) | (g << 5) | (b))
-
-#define RGBA_COLOR_MASK 0x000000FF
-
-#define RGB888_COLOR_MASK   0x0000FF
-
-#define RGB565_RED_MASK   0xF8
-#define RGB565_GREEN_MASK 0x07E4
-#define RGB565_BLUE_MASK  0x001F
-
-enum colorFormat {
-    COLOR_FORMAT_RGB565 = 1,
-    COLOR_FORMAT_RGB888,
-    COLOR_FORMAT_RGBA
-};
-
-struct shape_framebuffer_info {
-    char* fbp;
-    int framebuffer_fd;
-    int initialized;
-    int line_size;
-    long int screensize;
-    unsigned int bpp;
-    unsigned int xres;
-    unsigned int yres;
-    unsigned int xres_virtual;
-    unsigned int yres_virtual;
-    unsigned int xoffset;
-    unsigned int yoffset;
-
-} shape_fb_info = {
-    .fbp = 0,
-    .framebuffer_fd = -1,
-    .initialized = 0,
-    .line_size = 0,
-    .screensize = 0,
-    .bpp = -1,
-    .xres = 0,
-    .yres = 0,
-    .xres_virtual = 0,
-    .yres_virtual = 0,
-    .xoffset = 0,
-    .yoffset = 0
-};
+void dumpPoint(Point* point){
+}
 /*
 void dump_var_screeninfo(struct fb_var_screeninfo *vinfo){
     INFO("resolution: %u x %u\n", vinfo->xres, vinfo->yres);
@@ -154,7 +105,7 @@ void setPixel(int x, int y, int color, int colorFormat){
         return;
     }
     unsigned int location = getLocation(x, y);
-    INFO("x: %d, y: %d, location: %lu\n", x, y, location);
+//    INFO("x: %d, y: %d, location: %lu\n", x, y, location);
     if(location < 0) {
         printf("Error: Cannot get the location\n");
         return;
@@ -165,21 +116,21 @@ void setPixel(int x, int y, int color, int colorFormat){
     getColorFields(color, &r, &g, &b, &alpha, colorFormat);
 
     unsigned int bpp = shape_fb_info.bpp;
-    INFO("bpp: %u\n", shape_fb_info.bpp);
-    INFO("red: %d, green: %d, blue: %d, alpha: %d, bpp: %u\n", r, g, b, alpha, bpp);
+//    INFO("bpp: %u\n", shape_fb_info.bpp);
+//    INFO("red: %d, green: %d, blue: %d, alpha: %d, bpp: %u\n", r, g, b, alpha, bpp);
     if(bpp == 16){
-       INFO("Screen Color Format RGB565\n");
+//       INFO("Screen Color Format RGB565\n");
        unsigned short int t = r << 16 |
                               g << 5  |
                               b;
      *((unsigned short int*)(fbp + location)) = t;
     } else if(bpp == 24) {
-        INFO("Screen Color Format RGB888\n");
+//        INFO("Screen Color Format RGB888\n");
         *(fbp + location)     = 0xFF & b;
         *(fbp + location + 1) = 0xFF & g;
         *(fbp + location + 2) = 0xFF & r;
     } else if(bpp == 32){
-        INFO("Screen Color Format RGBA\n");
+//        INFO("Screen Color Format RGBA\n");
         *(fbp + location)     = 0xFF & b;
         *(fbp + location + 1) = 0xFF & g;
         *(fbp + location + 2) = 0xFF & r;
@@ -255,7 +206,7 @@ void drawLine_backup(int startx, int starty, int endx, int endy, int color){
     float k = 0.0, c = 0.0;
     k = (float)dx / (float)dy;
     c = (starty * dy - startx * dx) / dy;
-    INFO("dx: %d, dy: %d, k: %.2f, c: %.2f\n", dx, dy, k, c);
+//    INFO("dx: %d, dy: %d, k: %.2f, c: %.2f\n", dx, dy, k, c);
     if(abs(k) < 1){
         int x = 0;
         float y = 0.0;
@@ -333,6 +284,45 @@ void drawRectangle(int leftTopX, int leftTopY, int rightBottomX, int rightBottom
     drawLine(rightBottomX, rightBottomY, leftTopX, rightBottomY, color);
     drawLine(leftTopX, rightBottomY, leftTopX, leftTopY, color);
 }
+
+void bezier2(Point *p1, Point *p2, Point* p3, Point* p4, int shift){
+    Point targetPoint;
+
+    Point m1, m2;
+
+    m1.x = (p1->x + p2->x) >> 1;
+    m1.y = (p1->y + p2->y) >> 1;
+
+    m2.x = (p3->x + p4->x ) >> 1;
+    m2.y = (p3->y + p4->y ) >> 1;
+
+    targetPoint.x = (m1.x + m2.x) >> shift;
+    targetPoint.y = (m1.y + m2.y) >> shift;
+    shift++;
+    INFO("===================START======================\n");
+    INFO("Start Coord(%d, %d)\n", p1->x, p1->y);
+    INFO("control1 Coord(%d, %d)\n", p2->x, p2->y);
+    INFO("control2 Coord(%d, %d)\n", p3->x, p3->y);
+    INFO("End Coord(%d, %d)\n", p4->x, p4->y);
+    INFO("m1 Coord(%d, %d)\n", m1.x, m1.y);
+    INFO("m2 Coord(%d, %d)\n", m2.x, m2.y);
+    INFO("target Coord(%d, %d)\n", targetPoint.x, targetPoint.y);
+    INFO("===================END======================\n");
+    if (!(isValidPoint(&m1) && isValidPoint(&m2) && isValidPoint(&targetPoint))) return;
+    if(isSamePoint(&m1, p1) ||
+       isSamePoint(&m1, p2) ||
+       isSamePoint(&m2, p4) ||
+       isSamePoint(&m2, p3) ||
+       isSamePoint(&targetPoint, &m1) ||
+       isSamePoint(&targetPoint, &m2)){
+        return;
+    }
+    setPixel(targetPoint.x, targetPoint.y, 0x00FF00, COLOR_FORMAT_RGB888);
+
+    bezier2(p1, &m1, p3, &m2, shift);
+    bezier2(&m1, p2, &m2, p4, shift);
+}
+
 int main()
 {
     if(!shape_fb_info.initialized){
@@ -340,6 +330,11 @@ int main()
     }
     log_init();
 
+    Point start = {200, 200};
+    Point control = {400, 400};
+    Point end = {100, 100};
+
+    bezier2(&start, &end, &control, &control, 1);
 //   setPixel(600, 1, 0x00FF00, COLOR_FORMAT_RGB888);
 //   setPixel(600, 2, 0x00FF00, COLOR_FORMAT_RGB888);
 //   setPixel(600, 3, 0x00FF00, COLOR_FORMAT_RGB888);
@@ -349,7 +344,7 @@ int main()
 //      dump_fix_screeninfo(shape_fb_info.finfo);
 //    drawLine(600,300, 800, 500, 0x00FF00);
 //    drawCircle(500, 500, 50, 0x00FF00);
-    drawRectangle(400, 400, 600,600, 0x00FF00);
+//    drawRectangle(400, 400, 600,600, 0x00FF00);
     log_close();
     if(shape_fb_info.initialized){
         free_framebuffer_info(&shape_fb_info);

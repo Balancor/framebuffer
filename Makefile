@@ -1,8 +1,8 @@
 COMMON_FILES := logs.c logs.h utils.h
-SHAPE_SRC_FILES := shape.c
+SHAPE_SRC_FILES := shape.c shape.h
 DUMP_SRC_FILES := dump_framebuffer.c
 FONT_SRC_FILES := font.h font.c
-shape: $(SRC_FILES)
+shape: $(SHAPE_SRC_FILES)
 	gcc -g -o shape $(COMMON_FILES) $(SHAPE_SRC_FILES)
 
 dump: dump_framebuffer.c
